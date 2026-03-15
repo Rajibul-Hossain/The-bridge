@@ -405,19 +405,23 @@
 }
 .floating-glass-note{
 
-    width:260px;
+    width:350px;
 
     padding:14px 16px;
 
-
     border-radius:32px;
 
-    background:#16161c;
+    background:rgba(22,22,28,0.35);
 
-    border:2px solid rgba(255, 255, 255, 0.209);
+    backdrop-filter:blur(25px) saturate(180%);
+    -webkit-backdrop-filter:blur(25px) saturate(180%);
+
+    border:1.5px solid rgba(255,255,255,0.25);
 
     box-shadow:
-    0 6px 18px rgba(0,0,0,0.45);
+    0 10px 30px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    inset 0 -1px 0 rgba(255,255,255,0.05);
 
     color:white;
 
@@ -425,25 +429,23 @@
 
     transition:
     transform .18s ease,
-    box-shadow .18s ease;
+    box-shadow .18s ease,
+    background .2s ease;
 }
 
 
 
-/* HOVER LIFT */
+/* subtle hover lift */
 
 .floating-glass-note:hover{
 
     transform:translateY(-2px);
 
     box-shadow:
-    0 10px 24px rgba(0,0,0,0.55);
+    0 15px 35px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.3);
 
 }
-
-
-
-/* HEADER ROW */
 
 .floating-glass-note > div{
 
@@ -584,7 +586,6 @@
     50% { transform: translateY(-3px) scale(1.02); }
 }
 
-/* Mobile Display Rules */
 @media (max-width: 768px) {
     .mobile-note-toggle-btn { display: block; }
     
