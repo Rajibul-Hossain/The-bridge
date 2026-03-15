@@ -284,7 +284,7 @@ function activateLiveCanvas() {
 window.initQuillEditor = function() {
     sharedEditor = new Quill('#editorCore', {
         theme: 'snow',
-        placeholder: `Start typing...`,
+        placeholder: `A shared Workspace notepad... Type Anything you want and make it visible automatically`,
         modules: {
             cursors: true, 
             toolbar: [
@@ -526,13 +526,13 @@ if (viewName === 'overview') {
             <div style="position: relative; width: 100%; min-height: 100%; display: flex; flex-direction: column;">
                 
                 <div class="note-system-anchor">
-                    <button id="noteTrigger" class="note-trigger-btn" onclick="togglePulseTyper()">+ Pulse Note</button>
+                    <button id="noteTrigger" class="note-trigger-btn" onclick="togglePulseTyper()">+ Note</button>
                     
                     <button id="mobileNoteToggle" class="mobile-note-toggle-btn" onclick="toggleMobileNotes()">👀 View Notes</button>
                     
                     <div id="pulseTyper" class="bubbly-typer">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <span style="font-size: 11px; color: #0a84ff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">New Pulse Note</span>
+                            <span style="font-size: 11px; color: #0a84ff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">New Note</span>
                             <span style="font-size: 10px; color: var(--text-faded);">24H Auto-Delete</span>
                         </div>
                         
@@ -540,7 +540,7 @@ if (viewName === 'overview') {
                         
                         <div class="typer-controls">
                             <button class="typer-btn btn-primary" onclick="savePulseNote()">Save Note</button>
-                            <button class="typer-btn btn-secondary" onclick="togglePulseTyper()">✕</button>
+                            <button class="typer-btn btn-secondary" style="width: 44px;" onclick="togglePulseTyper()">✕</button>
                         </div>
                     </div>
 
@@ -549,7 +549,7 @@ if (viewName === 'overview') {
 
                 <h1 class="view-title" style="text-transform: none; padding-right: 120px;">${getGreeting()}, <span style="text-transform: capitalize;">${currentUsername}</span></h1>
                 <p class="view-subtitle">Live telemetry synchronization.</p>
-                
+                    
                 <div class="widget-grid" style="margin-top: 30px;">
                     <div class="glass-widget">
                         <p class="widget-label">DISTANCE</p>
@@ -566,11 +566,56 @@ if (viewName === 'overview') {
                         <p class="widget-label" style="color: #0a84ff; text-transform: uppercase;">${partnerUsername}: ${partnerLocation.city}</p>
                         <h2 class="widget-value">${partnerLocation.temp}°C</h2>
                     </div>
+
+                    <div class="milestone-widget">
+                        <div class="journey-header">
+                            <div>
+                                <p style="font-size: 11px; color: #ff2a5f; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px;">The Journey</p>
+                                <div style="display: flex; align-items: baseline; gap: 8px;">
+                                    <h2 id="daysTogetherCounter" class="mega-number">0</h2>
+                                    <span style="font-size: 14px; color: var(--text-faded); font-weight: 500;">Days</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="eventsCarousel" class="events-carousel">
+                            </div>
+                    </div>
                 </div>
+
+                <div id="milestoneModal" class="modal-overlay">
+                    <div class="premium-modal">
+                        <h3 style="margin-top:0; margin-bottom: 20px; color: white; font-family: 'Poppins', sans-serif;">Add Milestone</h3>
+                        
+                        <div style="display: flex; gap: 15px;">
+                            <div class="input-group" style="width: 75px;">
+                                <label>Emoji</label>
+                                <input type="text" id="msIcon" class="premium-input" placeholder="❤️" maxlength="2" style="text-align: center; font-size: 20px; padding: 8px;">
+                            </div>
+                            <div class="input-group" style="flex: 1;">
+                                <label>Event Title</label>
+                                <input type="text" id="msTitle" class="premium-input" placeholder="e.g. First Date">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Date</label>
+                            <input type="date" id="msDate" class="premium-input" style="color-scheme: dark;">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 25px;">
+                            <button class="typer-btn btn-primary" onclick="saveMilestone()">Save to Timeline</button>
+                            <button class="typer-btn btn-secondary" style="width: 70px;" onclick="closeMilestoneModal()">❌</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         `;
 
+        // Start the Engines
         syncPulseNoteUI();
+        initMilestonesEngine(); // Switched to the new Firebase Cloud Engine
     }else if (viewName === 'journal') {
         box.innerHTML = `
             <div class="journal-layout" style="position: relative;">
@@ -965,7 +1010,7 @@ function syncPulseNoteUI() {
 
         // IF NO NOTES EXIST AT ALL
         if (!snap.exists()) {
-            if(trigger) trigger.innerText = "+ Pulse Note";
+            if(trigger) trigger.innerText = "+ Note";
             if(mobileBtn) {
                 mobileBtn.classList.remove('has-notes');
                 mobileBtn.innerHTML = "👀 View Notes";
@@ -994,10 +1039,9 @@ function syncPulseNoteUI() {
             
             if (isMine) myNoteExists = true;
 
-            const titleText = isMine ? `Your note` : `Note from${data.author}`;
+            const titleText = isMine ? `Your note` : `Note from ${data.author}`;
             const titleColor = isMine ? `var(--text-faded)` : `#0a84ff`;
             const deleteBtnHtml = isMine ? `<span onclick="deleteMyPulseNote()" style="cursor:pointer; color:rgba(255,255,255,0.3); font-size:12px; margin-left:10px; transition:0.2s;" onmouseover="this.style.color='#ff3b30'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">✕</span>` : ``;
-
             display.innerHTML += `
                 <div class="floating-glass-note" style="margin-top: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -1005,12 +1049,9 @@ function syncPulseNoteUI() {
                         <div style="display: flex; align-items: center;">
                             <span style="font-size: 9px; color: #ff6c0a; font-weight: 700;">${hoursLeft}h left</span>
                             ${deleteBtnHtml}
-                        </div>
-                    </div>
+                        </div></div>
                     <p style="margin: 0; font-size: 14px; color: white; line-height: 1.4; font-weight: 400;">${data.text}</p>
-                </div>
-            `;
-        });
+                </div>`;});
 
         if(trigger) {
             trigger.innerText = myNoteExists ? "Update" : "+ Note";
@@ -1040,4 +1081,125 @@ window.toggleMobileNotes = function() {
     
     // Update the button text to match the state
     btn.innerHTML = isShowing ? "🙈 Hide Notes" : "👀 View Notes";
+}
+// ==========================================
+// 15. DYNAMIC CLOUD MILESTONE ENGINE
+// ==========================================
+
+window.openMilestoneModal = function() {
+    document.getElementById('milestoneModal').classList.add('active');
+}
+
+window.closeMilestoneModal = function() {
+    document.getElementById('milestoneModal').classList.remove('active');
+    // Clear inputs
+    document.getElementById('msIcon').value = "";
+    document.getElementById('msTitle').value = "";
+    document.getElementById('msDate').value = "";
+}
+
+window.saveMilestone = async function() {
+    const icon = document.getElementById('msIcon').value || "✨";
+    const title = document.getElementById('msTitle').value;
+    const date = document.getElementById('msDate').value; // Format: YYYY-MM-DD
+
+    if(!title || !date) return alert("Please enter a title and date.");
+
+    // Push new event to Firebase!
+    const newMilestoneRef = push(ref(rtdb, `bridges/${currentBridgeId}/milestones`));
+    await set(newMilestoneRef, {
+        icon: icon,
+        title: title,
+        date: date,
+        addedBy: currentUsername,
+        timestamp: rtdbTime()
+    });
+
+    closeMilestoneModal();
+}
+
+window.deleteMilestone = async function(id) {
+    if(confirm("Remove this milestone from the timeline?")) {
+        await set(ref(rtdb, `bridges/${currentBridgeId}/milestones/${id}`), null);
+    }
+}
+
+window.initMilestonesEngine = function() {
+    const milestonesRef = ref(rtdb, `bridges/${currentBridgeId}/milestones`);
+
+    onValue(milestonesRef, (snap) => {
+        const carousel = document.getElementById('eventsCarousel');
+        const counterEl = document.getElementById('daysTogetherCounter');
+        if (!carousel) return;
+
+        carousel.innerHTML = ""; // Clear board
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let events = [];
+        let earliestDate = today; // To calculate total days together
+
+        if (snap.exists()) {
+            snap.forEach(child => {
+                const data = child.val();
+                events.push({ id: child.key, ...data });
+                
+                const evDate = new Date(data.date + 'T00:00:00'); // Force local midnight
+                if (evDate < earliestDate) earliestDate = evDate;
+            });
+        }
+
+        // 1. Update the Main "Days Together" Counter based on the oldest event
+        if (counterEl && events.length > 0) {
+            const daysTogether = Math.floor((today - earliestDate) / (1000 * 60 * 60 * 24));
+            counterEl.innerText = daysTogether; // You can re-add the counting animation here if you prefer
+        } else if (counterEl) {
+            counterEl.innerText = "0";
+        }
+
+        // 2. Sort events chronologically
+        events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // 3. Render the Cards
+        events.forEach(ev => {
+            const evDate = new Date(ev.date + 'T00:00:00');
+            const diffTime = evDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            let timeString = "";
+            let colorStyle = "";
+
+            if (diffDays < 0) {
+                timeString = `${Math.abs(diffDays)} Days Ago`;
+                colorStyle = "color: white;";
+            } else if (diffDays === 0) {
+                timeString = "Today! 🎉";
+                colorStyle = "color: #32d74b;"; 
+            } else {
+                timeString = `In ${diffDays} Days`;
+                colorStyle = "color: #0a84ff;"; 
+            }
+            
+            carousel.innerHTML += `
+                <div class="event-pill" style="position: relative;">
+                    <span onclick="deleteMilestone('${ev.id}')" style="position: absolute; top: 8px; right: 10px; font-size: 10px; cursor: pointer; color: rgba(255,255,255,0.2);">✕</span>
+                    
+                    <div class="event-icon">${ev.icon}</div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <span class="event-title">${ev.title}</span>
+                        <span class="event-time" style="${colorStyle}">${timeString}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        // 4. Always add the "Add Event" button at the end of the carousel
+        carousel.innerHTML += `
+            <div class="event-pill add-event-pill" onclick="openMilestoneModal()">
+                <div style="font-size: 20px; margin-bottom: 5px;">+</div>
+                <div class="event-title" style="color: #0a84ff;">Add Event</div>
+            </div>
+        `;
+    });
 }
