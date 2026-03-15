@@ -1,0 +1,102 @@
+:root {
+    --bg-deep: #05050a;
+    --accent-blue: #0a84ff;
+    --glass-panel: rgba(20, 20, 25, 0.65);
+    --glass-edge: rgba(255, 255, 255, 0.08);
+    --text-main: #ffffff;
+    --text-faded: #8e8e93;
+}
+
+body, html {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Poppins', sans-serif;
+    height: 100vh; overflow: hidden;
+    background-color: var(--bg-deep); color: var(--text-main);
+}
+
+.aurora-background {
+    height: 100%; width: 100%;
+    background: radial-gradient(circle at 15% 50%, rgba(10, 132, 255, 0.15), transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(94, 92, 230, 0.15), transparent 40%),
+                var(--bg-deep);
+    display: flex; justify-content: center; align-items: center;
+}
+
+.nexus-window {
+    width: 90%; max-width: 900px; height: 75vh;
+    background: var(--glass-panel); backdrop-filter: blur(40px) saturate(200%);
+    border: 1px solid var(--glass-edge); border-radius: 24px;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.95) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.nexus-header {
+    padding: 30px; border-bottom: 1px solid var(--glass-edge); text-align: center;
+}
+.nexus-header h2 { margin: 0 0 5px 0; font-size: 28px; font-weight: 600; letter-spacing: -0.5px; }
+.nexus-header p { margin: 0; color: var(--text-faded); font-size: 14px; }
+
+.nexus-split {
+    display: flex; flex: 1; overflow: hidden;
+}
+
+.directory-panel, .signals-panel {
+    flex: 1; padding: 30px; overflow-y: auto;
+}
+.directory-panel { border-right: 1px solid var(--glass-edge); }
+
+h3 { font-size: 14px; text-transform: uppercase; color: var(--text-faded); letter-spacing: 1px; margin-top: 0; margin-bottom: 20px;}
+
+/* User Cards */
+.users-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+
+.user-card, .request-card {
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px; padding: 20px; display: flex;
+    justify-content: space-between; align-items: center;
+    transition: 0.3s;
+}
+.user-card:hover { background: rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.1); }
+
+.user-info p.name { margin: 0; font-weight: 600; font-size: 16px; text-transform: capitalize; }
+.user-info p.role { margin: 5px 0 0 0; font-size: 12px; color: var(--text-faded); }
+
+.connect-btn {
+    background: var(--text-main); color: var(--bg-deep); border: none;
+    padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s;
+}
+.connect-btn:active { transform: scale(0.95); }
+.connect-btn.pending { background: rgba(255,255,255,0.1); color: white; cursor: default; }
+
+.accept-btn { background: #32d74b; color: #000; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.decline-btn { background: rgba(255,69,58,0.2); color: #ff453a; border: none; padding: 10px 16px; border-radius: 10px; cursor: pointer; margin-left: 5px;}
+
+.nexus-footer {
+    padding: 20px 30px; border-top: 1px solid var(--glass-edge); text-align: center;
+}
+.logout-btn { background: transparent; color: #ff453a; border: none; cursor: pointer; font-size: 14px; }
+.logout-btn:hover { text-decoration: underline; }
+
+.loading-text { color: var(--text-faded); font-size: 14px; font-style: italic; }
+
+@media (max-width: 800px) {
+    .nexus-split { flex-direction: column; }
+    .directory-panel { border-right: none; border-bottom: 1px solid var(--glass-edge); }
+    .nexus-window { height: 95vh; width: 95%; }
+}
+/* Hide scrollbar for Chrome, Safari and Opera */
+*::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}

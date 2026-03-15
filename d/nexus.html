@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Bridge | Global Nexus</title>
+    <link rel="stylesheet" href="nexus.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="aurora-background">
+        <div class="nexus-window">
+            
+            <div class="nexus-header">
+                <h2>The Nexus</h2>
+                <p id="nexusStatus">Initializing secure connection...</p>
+            </div>
+
+            <div class="nexus-split">
+                <div class="directory-panel">
+                    <h3>Available Nodes</h3>
+                    <div id="usersDirectory" class="users-grid">
+                        <p class="loading-text">Scanning global network...</p>
+                        </div>
+                </div>
+
+                <div class="signals-panel">
+                    <h3>Incoming Signals</h3>
+                    <div id="incomingRequests" class="requests-list">
+                        <p class="loading-text">No incoming handshakes.</p>
+                        </div>
+                </div>
+            </div>
+
+            <div class="nexus-footer">
+                <button class="logout-btn" onclick="executeLogout()">Disconnect & Logout</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module" src="nexusLogic.js"></script>
+</body>
+</html>

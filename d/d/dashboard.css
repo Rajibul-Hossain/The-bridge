@@ -1,0 +1,471 @@
+:root {
+    --bg-deep: #05050a; --accent-blue: #0a84ff;
+    --glass-panel: rgba(20, 20, 25, 0.65); --glass-card: rgba(35, 35, 45, 0.5);
+    --glass-edge: rgba(255, 255, 255, 0.08);
+    --text-main: #ffffff; --text-faded: #8e8e93;
+}
+
+body, html { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Poppins', sans-serif; height: 100vh; overflow: auto; background-color: var(--bg-deep); color: var(--text-main); }
+
+.app-background { height: 100%; width: 100%; background: radial-gradient(circle at 20% 80%, rgba(10, 132, 255, 0.15), transparent 50%), radial-gradient(circle at 80% 20%, rgba(94, 92, 230, 0.15), transparent 50%), var(--bg-deep); display: flex; justify-content: center; align-items: center; }
+
+.app-shell { display: flex; width: 95%; max-width: 1400px; height: 90vh; background: var(--glass-panel); backdrop-filter: blur(40px) saturate(200%); border: 1px solid var(--glass-edge); border-radius: 32px; box-shadow: 0 30px 60px rgba(0,0,0,0.5); overflow: hidden; animation: fadeUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.glass-sidebar { width: 260px; background: rgba(0,0,0,0.2); border-right: 1px solid var(--glass-edge); display: flex; flex-direction: column; padding: 30px 20px; }
+.status-indicator { font-size: 12px; color: #32d74b; font-weight: 500; display: flex; align-items: center; gap: 8px; margin-bottom: 40px; background: rgba(50, 215, 75, 0.1); padding: 8px 15px; border-radius: 20px; text-transform: capitalize; }
+.pulse-dot { width: 8px; height: 8px; background: #32d74b; border-radius: 50%; box-shadow: 0 0 10px #32d74b; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.nav-menu { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
+.nav-item { background: transparent; border: none; color: var(--text-faded); text-align: left; padding: 14px 20px; border-radius: 14px; font-size: 15px; font-weight: 500; cursor: pointer; transition: 0.3s; }
+.nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); transform: translateX(5px); }
+.nav-item.active { background: rgba(10, 132, 255, 0.15); color: var(--accent-blue); }
+
+.logout-btn { background: transparent; border: none; color: #ff453a; font-size: 14px; cursor: pointer; padding: 10px; width: 100%; text-align: left; transition: 0.2s; }
+.logout-btn:hover { background: rgba(255, 69, 58, 0.1); border-radius: 10px; }
+
+.dynamic-content-area { flex-grow: 1; padding: 50px; overflow-y: auto; }
+.view-title { font-size: 36px; font-weight: 600; margin: 0 0 5px 0; letter-spacing: -1px; text-transform: capitalize; }
+.view-subtitle { color: var(--text-faded); font-size: 15px; margin-bottom: 40px; }
+
+.widget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; }
+.glass-widget { background: var(--glass-card); border: 1px solid var(--glass-edge); border-radius: 24px; padding: 30px; transition: 0.4s; }
+.glass-widget:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.15); }
+.widget-label { font-size: 13px; color: var(--text-faded); text-transform: uppercase; letter-spacing: 1px; margin: 0 0 10px 0; }
+.widget-value { font-size: 32px; font-weight: 600; margin: 0; }
+
+.editor-box { width: 100%; height: 100px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-edge); border-radius: 16px; color: white; padding: 15px; font-size: 15px; font-family: 'Poppins', sans-serif; outline: none; resize: none; box-sizing: border-box; transition: 0.3s; }
+.editor-box:focus { border-color: var(--accent-blue); background: rgba(0,0,0,0.4); }
+.action-btn { background: var(--text-main); color: var(--bg-deep); border: none; padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+.action-btn:active { transform: scale(0.95); }
+
+/* Journal Sync Layout */
+.journal-feed { margin-top: 30px; display: flex; flex-direction: column; gap: 15px; }
+.journal-note { background: rgba(255,255,255,0.05); padding: 15px 20px; border-radius: 16px; border-left: 3px solid var(--accent-blue); animation: fadeUp 0.3s ease; }
+.journal-note.partner { border-left-color: #d4a373; background: rgba(212, 163, 115, 0.05); }
+.note-author { font-size: 11px; color: var(--text-faded); text-transform: uppercase; letter-spacing: 1px; margin: 0 0 5px 0; }
+.note-text { font-size: 15px; margin: 0; line-height: 1.5; }
+
+@media (max-width: 800px) {
+    .app-shell { flex-direction: column; width: 100%; height: 100%; border-radius: 0; border: none; }
+    .glass-sidebar { width: 100%; padding: 20px; border-right: none; border-bottom: 1px solid var(--glass-edge); flex-direction: row; align-items: center; justify-content: space-between;}
+    .nav-menu { flex-direction: row; overflow-x: auto; gap: 15px; }
+    .nav-item { padding: 8px 15px; white-space: nowrap; font-size: 13px; }
+    .sidebar-header, .sidebar-footer { display: none; }
+    .dynamic-content-area { padding: 25px; }
+}
+/* --- 7. INTERACTIVE WIDGETS & MODAL --- */
+
+/* Make the weather cards look clickable */
+.clickable-widget {
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.clickable-widget::after {
+    content: '📍 Click to view map';
+    position: absolute;
+    bottom: -30px; left: 0; right: 0;
+    text-align: center; font-size: 11px;
+    color: var(--accent-blue); background: rgba(0,0,0,0.5);
+    padding: 8px 0; transition: 0.3s;
+}
+
+.clickable-widget:hover::after { bottom: 0; }
+.clickable-widget:active { transform: scale(0.95); }
+
+/* The Glass Map Modal */
+/* --- THE 144HZ GLASS MAP MODAL --- */
+.glass-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    
+    /* The Failsafe */
+    display: flex !important; 
+    
+    justify-content: center; align-items: center;
+    z-index: 1000;
+    
+    /* Hardware acceleration setup */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* When the JS adds this class, the background gracefully fades in */
+.glass-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    width: 90%; max-width: 600px; height: 500px;
+    background: var(--glass-card);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 28px;
+    display: flex; flex-direction: column;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2);
+    overflow: hidden;
+    
+    /* The 144hz Spring Animation Setup */
+    transform: scale(0.85) translateY(40px);
+    opacity: 0;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease-out;
+    will-change: transform, opacity; /* Forces the GPU to render this instantly */
+}
+
+/* When active, the modal springs up and scales to 100% */
+.glass-modal.active .modal-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.modal-header {
+    padding: 20px 25px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--glass-edge);
+    background: rgba(0,0,0,0.3);
+}
+
+.modal-header h3 { margin: 0; font-size: 18px; font-weight: 500; letter-spacing: 0.5px;}
+
+.close-btn {
+    background: rgba(255,255,255,0.1); color: white; border: none;
+    width: 32px; height: 32px; border-radius: 50%;
+    font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover { background: rgba(255, 69, 58, 0.8); transform: rotate(90deg); }
+
+.map-container { flex-grow: 1; width: 100%; background: #000; }
+/* --- 8. SYNCSPACE CANVAS UPGRADES --- */
+
+.canvas-container {
+    display: flex; flex-direction: column; align-items: center; 
+    height: 100%; width: 100%;
+}
+
+.notion-page {
+    width: 100%; max-width: 750px; /* Centers the text like a real document */
+    display: flex; flex-direction: column; flex-grow: 1;
+}
+
+.glass-toolbar {
+    display: flex; gap: 8px; padding: 10px 15px; 
+    background: rgba(20, 20, 25, 0.7); backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-edge); border-radius: 16px;
+    width: fit-content; margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.format-btn {
+    background: transparent; color: var(--text-faded); border: none;
+    font-size: 15px; cursor: pointer; padding: 6px 12px; border-radius: 8px;
+    font-weight: 500; transition: all 0.2s ease;
+}
+
+.format-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+
+.typing-indicator {
+    font-size: 13px;
+    color: #0a84ff;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 100; /* Ensure it stays above the canvas */
+}
+
+.typing-indicator.active {
+    opacity: 1 !important;
+}
+/* Stripping the ugly borders from the textarea to make it look like a blank page */
+.page-editor {
+    flex-grow: 1; width: 100%; border: none; background: transparent;
+    color: #fff; font-size: 17px; line-height: 1.8; font-family: 'Poppins', sans-serif;
+    resize: none; outline: none; padding-bottom: 50px;
+}
+.page-editor::placeholder { color: rgba(255,255,255,0.2); font-weight: 300; }
+/* --- 8. THE PRO QUILL EDITOR --- */
+.canvas-container {
+    display: flex; flex-direction: column; align-items: center; 
+    height: 100%; width: 100%;
+}
+
+.notion-page {
+    width: 100%; max-width: 800px;
+    display: flex; flex-direction: column; flex-grow: 1;
+    background: rgba(0,0,0,0.2); border-radius: 20px;
+    border: 1px solid var(--glass-edge); overflow: hidden;
+}
+
+/* Hijacking the Quill Toolbar */
+.ql-toolbar.ql-snow {
+    border: none !important;
+    border-bottom: 1px solid var(--glass-edge) !important;
+    background: rgba(255,255,255,0.05);
+    padding: 15px !important;
+    backdrop-filter: blur(10px);
+}
+
+.ql-toolbar.ql-snow .ql-stroke { stroke: #fff !important; }
+.ql-toolbar.ql-snow .ql-fill { fill: #fff !important; }
+.ql-toolbar.ql-snow .ql-picker { color: #fff !important; }
+.ql-toolbar.ql-snow button:hover .ql-stroke { stroke: #0a84ff !important; }
+
+/* The Actual Editing Canvas */
+.ql-container.ql-snow {
+    border: none !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 16px !important;
+    color: #fff;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.ql-editor { padding: 40px !important; line-height: 1.8; }
+.ql-editor.ql-blank::before { color: rgba(255,255,255,0.3) !important; font-style: normal !important; }
+
+/* Typing Indicator */
+.typing-indicator {
+    font-size: 13px; color: #0a84ff; font-weight: 500;
+    opacity: 0; transition: 0.3s ease;
+}
+.typing-indicator.active { opacity: 1; animation: pulse 1.5s infinite; }
+/* --- 10. ACTIVITY TIMELINE --- */
+.journal-layout {
+    display: flex; gap: 20px; height: 100%; width: 100%; max-width: 1100px;
+}
+.timeline-panel {
+    width: 280px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-edge);
+    border-radius: 20px; display: flex; flex-direction: column; overflow: hidden;
+}
+.timeline-header {
+    padding: 15px; border-bottom: 1px solid var(--glass-edge); font-size: 14px; font-weight: 600; color: var(--text-faded);
+}
+.timeline-feed {
+    padding: 15px; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+}
+.timeline-event {
+    font-size: 12px; line-height: 1.4; padding-left: 12px; border-left: 2px solid var(--accent-blue);
+}
+.timeline-event.partner { border-left-color: #d4a373; }
+.timeline-time { font-size: 10px; color: var(--text-faded); margin-top: 3px; }
+
+@media (max-width: 900px) { .journal-layout { flex-direction: column; } .timeline-panel { width: 100%; height: 200px; } 
+
+.ql-cursor-caret {
+    background-color: #0a84ff !important;
+    width: 2px !important;
+    box-shadow: 0 0 5px rgba(10, 132, 255, 0.5);
+}
+
+/* The actual name tag popup */
+.ql-cursor-flag {
+    background-color: #0a84ff !important;
+    border-radius: 6px !important;
+    border-top-left-radius: 0 !important; /* Makes it look like a speech bubble attached to the cursor */
+    padding: 3px 8px !important;
+    top: 100% !important; /* Pushes it slightly below the line */
+    margin-top: 4px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4) !important;
+    transition: opacity 0.3s ease !important;
+}
+
+/* The text inside the name tag */
+.ql-cursor-name {
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: white !important;
+    letter-spacing: 0.5px;
+    text-transform: capitalize;
+}}
+/* --- 12. FIGMA-STYLE MULTIPLAYER MOUSE POINTERS --- */
+.mouse-pointer {
+    position: fixed;
+    top: 0; left: 0;
+    pointer-events: none; /* Prevents the fake cursor from blocking real clicks */
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    
+    /* Hardware acceleration for buttery smooth 144hz movement */
+    transition: transform 0.05s linear; 
+    will-change: transform;
+}
+
+.mouse-pointer svg {
+    width: 18px; height: 18px;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+}
+
+.mouse-name-tag {
+    background: #0a84ff; /* Apple Blue */
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 8px;
+    border-top-left-radius: 0;
+    margin-top: 2px;
+    margin-left: 12px;
+    text-transform: capitalize;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+/* --- GLOBAL SCROLLBAR HIDING --- */
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+*::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+/* --- 13. VERSION HISTORY PANEL --- */
+/* --- 13. EXPANDING VERSION HISTORY POPUP --- */
+/* --- 13. EXPANDING VERSION HISTORY POPUP --- */
+.history-popup {
+    position: absolute;
+    top: 45px; 
+    left: 0; /* Changed from right: 0 to expand towards the right */
+    width: 320px;
+    max-height: 500px;
+    background: rgba(15, 15, 20, 0.95);
+    backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    
+    transform: scale(0);
+    opacity: 0;
+    transform-origin: top left; /* Growing FROM the button towards the right */
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.history-item.previewing {
+    background: rgba(10, 132, 255, 0.15);
+    border-left: 3px solid var(--accent-blue);
+}
+.history-popup.active {
+    transform: scale(1);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.history-item {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: 0.2s;
+}
+
+.history-item:hover { background: rgba(255,255,255,0.05); }
+
+/* Hide scrollbar within the feed */
+.history-feed-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.history-feed-container::-webkit-scrollbar { display: none; }
+/* --- 14. MOBILE HEADER STATUS --- */
+.mobile-status-chip {
+    display: none; /* Hidden on Desktop */
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--glass-edge);
+}
+
+.status-dot-small {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #8e8e93;
+}
+
+.status-dot-small.online {
+    background: #32d74b;
+    box-shadow: 0 0 5px #32d74b;
+}
+
+/* Show only on Mobile */
+@media (max-width: 768px) {
+    .mobile-status-chip {
+        display: flex;
+    }
+    /* Optional: Hide the original sidebar status on mobile to save space */
+    .partner-status-sidebar {
+        display: none;
+    }
+}
+/* --- 15. UNREAD UPDATES STYLING --- */
+
+/* --- FIXED UNREAD BADGE --- */
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 12px;
+    height: 12px;
+    background: #ff3b30 !important;
+    border-radius: 50%;
+    border: 2px solid #1a1a1a;
+    display: none;
+    z-index: 101;
+}
+
+.notification-badge.active {
+    display: block !important;
+    animation: heartBeat 1.5s infinite;
+}
+@keyframes heartBeat {
+    0% { transform: scale(1); }
+    14% { transform: scale(1.3); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.3); }
+    70% { transform: scale(1); }
+}
+
+.update-text-highlight {
+    color: #32d74b !important; /* Green text for "New Updates" */
+    font-weight: 600;
+}
+/* --- GLOBAL SIDEBAR NOTIFICATION --- */
+.nav-item {
+    position: relative; /* Allows the badge to anchor to the button */
+}
+
+.sidebar-badge {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    width: 8px;
+    height: 8px;
+    background: #ff3b30;
+    border-radius: 50%;
+    display: none;
+    box-shadow: 0 0 10px rgba(255, 59, 48, 0.5);
+}
+
+.sidebar-badge.active {
+    display: block;
+}

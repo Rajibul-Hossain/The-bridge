@@ -1,0 +1,609 @@
+/* --- 16. TOP RIGHT ANCHOR --- */
+
+.note-system-anchor{
+    position:absolute;
+    top:0;
+    right:0;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:18px;
+    z-index:2000;
+}
+
+
+
+/* MAIN FLOATING PANEL */
+
+.bubbly-typer{
+
+    width:0;
+    height:0;
+    opacity:0;
+
+    display:flex;
+    flex-direction:column;
+
+    border-radius:32px;
+
+    background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,.08), transparent 60%),
+    linear-gradient(160deg,#1a1a1f,#0f0f13);
+
+    backdrop-filter:blur(60px) saturate(170%);
+    -webkit-backdrop-filter:blur(60px) saturate(170%);
+
+    border:1px solid rgba(255,255,255,.06);
+
+    overflow:hidden;
+
+    transform:scale(.92) translateY(-10px);
+
+    transition:
+    width .45s cubic-bezier(.2,.8,.2,1),
+    height .45s cubic-bezier(.2,.8,.2,1),
+    opacity .35s ease,
+    transform .45s cubic-bezier(.2,.8,.2,1);
+
+    pointer-events:none;
+
+    box-shadow:
+    0 50px 100px rgba(0,0,0,.6),
+    0 10px 30px rgba(0,0,0,.4),
+    inset 0 1px 0 rgba(255,255,255,.07);
+}
+
+
+
+/* EXPANDED */
+
+.bubbly-typer.expanded{
+    width:370px;
+    height:250px;
+    opacity:1;
+    padding:22px;
+    pointer-events:auto;
+    transform:scale(1) translateY(0);
+}
+
+
+
+/* PREMIUM TEXTAREA */
+
+.premium-textarea{
+
+    width:100%;
+    flex-grow:1;
+
+    border-radius:20px;
+
+    padding:16px 18px;
+
+    background:
+    linear-gradient(180deg,#111116,#0b0b0e);
+
+    border:1px solid rgba(255,255,255,.05);
+
+    color:#fff;
+
+    font-family:'Poppins',sans-serif;
+    font-size:14px;
+    line-height:1.6;
+
+    resize:none;
+    outline:none;
+
+    transition:
+    border .25s ease,
+    box-shadow .3s ease,
+    transform .2s ease;
+
+    box-shadow:
+    inset 0 6px 18px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+
+
+/* PLACEHOLDER */
+
+.premium-textarea::placeholder{
+    color:rgba(255,255,255,.3);
+}
+
+
+
+/* FOCUS */
+
+.premium-textarea:focus{
+
+    border:1px solid rgba(10,132,255,.7);
+
+    box-shadow:
+    inset 0 8px 20px rgba(0,0,0,.55),
+    0 0 0 3px rgba(10,132,255,.15),
+    0 10px 30px rgba(10,132,255,.2);
+
+    transform:translateY(-1px);
+}
+
+
+
+/* BUTTON ROW */
+
+.typer-controls{
+    display:flex;
+    gap:12px;
+    margin-top:18px;
+}
+
+
+
+/* BASE BUTTON */
+
+.typer-btn{
+
+    border:none;
+    cursor:pointer;
+
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:13px;
+
+    border-radius:999px;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    background .2s ease;
+
+}
+
+
+
+/* UPDATE BUTTON (PRIMARY) */
+
+.btn-primary{
+
+    flex:1;
+
+    padding:12px 20px;
+
+    color:white;
+
+    background:
+    linear-gradient(135deg,#2ea1ff,#0a84ff);
+
+    box-shadow:
+    0 8px 20px rgba(10,132,255,.4),
+    inset 0 1px 0 rgba(255,255,255,.35);
+
+}
+
+
+
+/* HOVER */
+
+.btn-primary:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+    0 16px 35px rgba(10,132,255,.45);
+}
+
+
+
+/* ACTIVE */
+
+.btn-primary:active{
+    transform:scale(.97);
+}
+
+
+
+/* PULSE BUTTON */
+
+.btn-secondary{
+
+    width:48px;
+    height:48px;
+
+    border-radius:50%;
+
+    background:
+    radial-gradient(circle at 30% 30%,#4db1ff,#0a84ff);
+
+    color:white;
+
+    font-size:18px;
+
+    box-shadow:
+    0 10px 25px rgba(10,132,255,.45);
+
+    animation:buttonPulse 2.2s infinite;
+}
+
+
+
+/* HOVER */
+
+.btn-secondary:hover{
+
+    transform:scale(1.08);
+
+    box-shadow:
+    0 15px 35px rgba(10,132,255,.55);
+}
+
+
+
+/* ACTIVE */
+
+.btn-secondary:active{
+    transform:scale(.95);
+}
+
+
+
+/* PULSE ANIMATION */
+
+@keyframes buttonPulse{
+
+    0%{
+        box-shadow:
+        0 0 0 0 rgba(10,132,255,.6),
+        0 10px 25px rgba(10,132,255,.45);
+    }
+
+    70%{
+        box-shadow:
+        0 0 0 14px rgba(10,132,255,0),
+        0 10px 25px rgba(10,132,255,.45);
+    }
+
+    100%{
+        box-shadow:
+        0 0 0 0 rgba(10,132,255,0),
+        0 10px 25px rgba(10,132,255,.45);
+    }
+
+}
+/* =========================
+   UPDATE PULSE BUTTON
+========================= */
+
+#noteTrigger.note-trigger-btn{
+
+    position:relative;
+
+    padding:12px 22px;
+
+    border:none;
+
+    border-radius:999px;
+
+    font-family:'Poppins',sans-serif;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    letter-spacing:.4px;
+
+    color:white;
+
+    cursor:pointer;
+
+    background:linear-gradient(
+        135deg,
+        #2ea1ff,
+        #0a84ff
+    );
+
+    box-shadow:
+    0 8px 20px rgba(10,132,255,.45),
+    inset 0 1px 0 rgba(255,255,255,.35);
+
+    transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    background .2s ease;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
+
+
+/* SUBTLE TOP HIGHLIGHT */
+
+#noteTrigger.note-trigger-btn::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+
+    left:0;
+
+    right:0;
+
+    height:45%;
+
+    border-radius:999px;
+
+    background:linear-gradient(
+        to bottom,
+        rgba(255,255,255,.35),
+        rgba(255,255,255,0)
+    );
+
+    opacity:.35;
+
+    pointer-events:none;
+
+}
+
+
+
+/* HOVER */
+
+#noteTrigger.note-trigger-btn:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+    0 14px 30px rgba(10,132,255,.5),
+    inset 0 1px 0 rgba(255,255,255,.4);
+
+}
+
+
+
+/* ACTIVE PRESS */
+
+#noteTrigger.note-trigger-btn:active{
+
+    transform:translateY(0) scale(.96);
+
+    box-shadow:
+    0 6px 12px rgba(10,132,255,.45);
+
+}
+
+
+
+/* MOBILE RESPONSIVENESS */
+
+@media (max-width:480px){
+
+    #noteTrigger.note-trigger-btn{
+
+        padding:10px 18px;
+
+        font-size:12px;
+
+    }
+
+}
+/* =========================
+   FLOATING NOTE CARD
+========================= */
+.floating-glass-note{
+    position: relative;
+    top: -25px;   /* moves the card upward closer to the button */
+}
+.floating-glass-note{
+
+    width:260px;
+
+    padding:14px 16px;
+
+
+    border-radius:32px;
+
+    background:#16161c;
+
+    border:2px solid rgba(255, 255, 255, 0.209);
+
+    box-shadow:
+    0 6px 18px rgba(0,0,0,0.45);
+
+    color:white;
+
+    font-family:'Poppins', sans-serif;
+
+    transition:
+    transform .18s ease,
+    box-shadow .18s ease;
+}
+
+
+
+/* HOVER LIFT */
+
+.floating-glass-note:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+    0 10px 24px rgba(0,0,0,0.55);
+
+}
+
+
+
+/* HEADER ROW */
+
+.floating-glass-note > div{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:8px;
+
+}
+
+
+
+/* RIGHT SIDE (TIME + DELETE) */
+
+.floating-glass-note > div > div{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+}
+
+
+
+/* TITLE */
+
+.floating-glass-note span:first-child{
+
+    font-size:10px;
+
+    font-weight:800;
+
+    text-transform:uppercase;
+
+    letter-spacing:.5px;
+
+}
+
+
+
+/* TIME */
+
+.floating-glass-note span:nth-child(2){
+
+    font-size:10px;
+
+    color:#ff9f0a;
+
+    font-weight:700;
+
+}
+
+
+
+/* TEXT */
+
+.floating-glass-note p{
+
+    margin:0;
+
+    font-size:14px;
+
+    line-height:1.45;
+
+    color:white;
+
+}
+/* ==========================================
+   17. ULTRA-MAGNETIC MOBILE BUTTON (Flagship UI)
+   ========================================== */
+
+.mobile-note-toggle-btn {
+    display: none; 
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-faded);
+    padding: 8px 16px;
+    border-radius: 20px; /* Sleeker pill shape */
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    margin-top: -5px; 
+    position: relative;
+    overflow: hidden;
+    z-index: 100;
+}
+
+/* --- THE IRRESISTIBLE STATE --- */
+.mobile-note-toggle-btn.has-notes {
+    /* Vibrant, moving fluid gradient */
+    background: linear-gradient(90deg, #ff2a5f, #ff719a, #0a84ff, #00c6ff);
+    background-size: 300% 300%;
+    color: #ffffff;
+    border: none;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 
+        0 8px 25px rgba(10, 132, 255, 0.4),
+        0 4px 10px rgba(255, 42, 95, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4); /* Glass edge reflection */
+    animation: fluidGradient 4s ease infinite, subtleBounce 2s ease-in-out infinite;
+}
+
+/* The Premium Light Shimmer (Sweeps across the button) */
+.mobile-note-toggle-btn.has-notes::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 50%; height: 100%;
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-20deg);
+    animation: shimmerSwipe 3s infinite;
+}
+
+/* --- ANIMATION KEYFRAMES --- */
+@keyframes fluidGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmerSwipe {
+    0% { left: -100%; }
+    20% { left: 200%; }
+    100% { left: 200%; }
+}
+
+@keyframes subtleBounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-3px) scale(1.02); }
+}
+
+/* Mobile Display Rules */
+@media (max-width: 768px) {
+    .mobile-note-toggle-btn { display: block; }
+    
+    #activeNoteDisplay {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+        pointer-events: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+        visibility: hidden;
+    }
+
+    #activeNoteDisplay.show-on-mobile {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+        visibility: visible;
+        position: relative;
+    }
+}

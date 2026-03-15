@@ -1,0 +1,204 @@
+/* --- 1. PREMIUM ONE UI / MACOS VARIABLES --- */
+:root {
+    --bg-deep: #05050a;
+    --accent-blue: #0a84ff; /* Apple System Blue */
+    --accent-glow: rgba(10, 132, 255, 0.4);
+    --glass-panel: rgba(20, 20, 25, 0.65);
+    --glass-edge: rgba(255, 255, 255, 0.08);
+    --text-main: #ffffff;
+    --text-faded: #8e8e93; /* Apple secondary text */
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Poppins', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--bg-deep);
+    color: var(--text-main);
+}
+
+/* --- 2. CINEMATIC AURORA BACKGROUND --- */
+.aurora-background {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* This creates massive glowing orbs that drift in the background */
+    background: 
+        radial-gradient(circle at 15% 50%, rgba(10, 132, 255, 0.15), transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(94, 92, 230, 0.15), transparent 40%),
+        var(--bg-deep);
+    animation: slowDrift 15s ease-in-out infinite alternate;
+}
+
+@keyframes slowDrift {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 100%; }
+}
+
+/* --- 3. THE FLOATING MAC WINDOW --- */
+.mac-window {
+    display: flex;
+    width: 90%;
+    max-width: 900px; /* Perfect desktop size */
+    height: 600px;
+    background: var(--glass-panel);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border: 1px solid var(--glass-edge);
+    border-radius: 32px; /* One UI 9 soft corners */
+    box-shadow: 
+        inset 0 1px 1px rgba(255, 255, 255, 0.1), /* Top rim highlight */
+        0 30px 60px rgba(0, 0, 0, 0.5); /* Massive soft drop shadow */
+    overflow: hidden;
+    /* Spring animation when it loads */
+    animation: windowPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes windowPop {
+    0% { transform: scale(0.9) translateY(30px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* --- 4. THE SPLIT PANELS --- */
+.left-art {
+    flex: 1;
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+    border-right: 1px solid var(--glass-edge);
+    padding: 50px;
+    display: flex;
+    align-items: center;
+}
+
+.brand-title { 
+    font-size: 14px; 
+    font-weight: 600; 
+    color: var(--accent-blue); 
+    letter-spacing: 3px; 
+    margin-bottom: 40px; 
+}
+
+.hero-headline { 
+    font-size: 46px; 
+    font-weight: 700; 
+    line-height: 1.1; 
+    margin-bottom: 20px; 
+    letter-spacing: -1px; 
+}
+
+.hero-subtext { 
+    font-size: 16px; 
+    color: var(--text-faded); 
+    line-height: 1.5; 
+}
+
+.right-form {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.form-wrapper { 
+    width: 100%; 
+    max-width: 320px; 
+    animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateX(10px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+.auth-title { font-size: 28px; font-weight: 600; margin: 0 0 5px 0; letter-spacing: -0.5px; }
+.auth-subtitle { color: var(--text-faded); font-size: 14px; margin-bottom: 35px; }
+
+/* --- 5. ULTRA PREMIUM INPUTS (One UI / iOS 17 Style) --- */
+.input-group { position: relative; margin-bottom: 20px; }
+
+.smooth-input {
+    width: 100%;
+    padding: 22px 16px 8px 16px; /* Space for the floating label */
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    color: var(--text-main);
+    font-size: 16px;
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* The Apple-style focus ring */
+.smooth-input:focus {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.smooth-input::placeholder { color: transparent; }
+
+.floating-label {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    font-size: 16px;
+    color: var(--text-faded);
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Moves the label up perfectly when typing */
+.smooth-input:focus ~ .floating-label,
+.smooth-input:not(:placeholder-shown) ~ .floating-label {
+    top: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent-blue);
+}
+
+/* --- 6. MAC OS SPRING BUTTONS --- */
+.spring-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--text-main);
+    color: var(--bg-deep);
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 15px;
+    /* Spring physics */
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.spring-btn:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 10px 20px rgba(255,255,255,0.1); 
+}
+
+.spring-btn:active { 
+    transform: scale(0.95); /* Extremely satisfying deep click */ 
+}
+
+.switch-text { text-align: center; margin-top: 25px; font-size: 14px; color: var(--text-faded); }
+.switch-link { color: var(--text-main); font-weight: 500; cursor: pointer; transition: 0.2s; }
+.switch-link:hover { opacity: 0.7; }
+
+/* --- 7. PERFECT MOBILE ADAPTATION --- */
+@media (max-width: 800px) {
+    .mac-window { 
+        flex-direction: column; 
+        width: 100%; height: 100%; 
+        border-radius: 0; border: none; 
+    }
+    .left-art { flex: none; padding: 40px 30px; border-right: none; border-bottom: 1px solid var(--glass-edge); }
+    .hero-headline { font-size: 32px; }
+    .right-form { padding: 30px; align-items: flex-start; }
+    .form-wrapper { max-width: 100%; }
+}

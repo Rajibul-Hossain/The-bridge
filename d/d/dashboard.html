@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Bridge | Inner Sanctum</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="others.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/quill-cursors@3.1.0/dist/quill-cursors.css" rel="stylesheet">
+</head>
+<body>
+
+    <div class="app-background">
+        <div class="app-shell" id="appShell" style="display: none;"> <nav class="glass-sidebar">
+                <div class="sidebar-header">
+                    <div class="status-indicator">
+                        <span class="pulse-dot"></span> <span id="partnerStatusText">Securing Node...</span>
+                    </div>
+                </div>
+
+                <div class="nav-menu">
+                    <button class="nav-item active" onclick="loadView('overview')">✨ Overview</button>
+                    <button class="nav-item" onclick="loadView('journal')">
+    📓 SyncSpace
+    <div id="sidebarUnreadBadge" class="sidebar-badge"></div>
+</button>
+                    <button class="nav-item" onclick="loadView('tracker')">⏳ Logistics</button>
+                    <button class="nav-item" onclick="alert('Vault Firebase Storage coming soon!')">🔒 The Vault</button>
+                </div>
+
+                <div class="sidebar-footer">
+                    <button class="logout-btn" onclick="executeLogout()">🚪 Disconnect</button>
+                </div>
+            </nav>
+
+            <main id="mainAppContent" class="dynamic-content-area">
+                </main>
+        </div>
+        
+        <div id="loadingCore" style="color: white; text-align: center;">
+            <h1 style="font-size: 50px; animation: pulse 1.5s infinite;">📡</h1>
+            <p style="color: #8e8e93;">Decrypting Bridge Payload...</p>
+        </div>
+    </div>
+<div id="mapModal" class="glass-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="mapTitle">Live Telemetry</h3>
+            <button class="close-btn" onclick="closeMap()">×</button>
+        </div>
+        <div id="mapFrameContainer" class="map-container">
+            </div>
+    </div>
+</div><script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill-cursors@3.1.0/dist/quill-cursors.min.js"></script>
+    <script type="module" src="dashboardLogic.js"></script>
+</body>
+</html>
