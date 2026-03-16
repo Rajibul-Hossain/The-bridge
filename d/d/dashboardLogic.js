@@ -1,11 +1,8 @@
-// ==========================================
-// 1. FIREBASE IMPORTS (Hybrid Setup)
-// ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { initInteractionListener } from './interxn.js';
 import { getFirestore, doc, getDoc, updateDoc, onSnapshot as firestoreSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getDatabase, ref, onValue, set, get, push, onDisconnect, serverTimestamp as rtdbTime, update, remove} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
 const firebaseConfig = {
     apiKey: "AIzaSyDEbvPzoahjdt0w5s2SF7Usn3ZnOxF2v38",
     authDomain: "ever-us.firebaseapp.com",
@@ -14,86 +11,87 @@ const firebaseConfig = {
     storageBucket: "ever-us.firebasestorage.app",
     messagingSenderId: "925623567345",
     appId: "1:925623567345:web:10c9d1e5873a4df7983a50",
-    measurementId: "G-6E4K45TWLV"
-};
-
+    measurementId: "G-6E4K45TWLV"};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const rtdb = getDatabase(app); 
-
-// Register the Text Cursor Module globally
 Quill.register('modules/cursors', QuillCursors);
-
-// ==========================================
-// 2. GLOBAL APP STATE
-// ==========================================
 let currentUser = null; 
 let currentUsername = ""; 
 let currentBridgeId = null; 
 let partnerUid = null; 
 let partnerUsername = "Loading...";
-
 let partnerIsOnline = false; 
 let partnerLastActive = null;
-
 let myLocation = { city: "Locating...", temp: "--", lat: 0, lon: 0 }; 
 let partnerLocation = { city: "Tracking...", temp: "--", lat: 0, lon: 0 };
-
 let timelineEvents = [];
+import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+setPersistence(auth, browserLocalPersistence)
+    .then(() => {
+        initAuthListener();
+    })
+    .catch((error) => {
+        console.error("Persistence Error:", error);
+    });
 
-// ==========================================
-// 3. SECURE LOGIN & INITIALIZATION
-// ==========================================
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        currentUser = user;
-        try {
-            const myDoc = await getDoc(doc(db, "users", user.uid));
-            if (myDoc.exists()) {
-                currentUsername = myDoc.data().username; 
-                currentBridgeId = myDoc.data().bridgeId; 
-                partnerUid = myDoc.data().partnerUid; 
-                
-                if (!currentBridgeId || !partnerUid) {
+function initAuthListener() {
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            try {
+                const userRef = doc(db, "users", user.uid);
+                const myDoc = await getDoc(userRef);
+
+                if (myDoc.exists()) {
+                    const userData = myDoc.data();
+                    currentUsername = userData.username;
+                    currentBridgeId = userData.bridgeId;
+                    partnerUid = userData.partnerUid;
+
+                    if (!currentBridgeId || !partnerUid) {
+                        window.location.href = 'nexus.html';
+                        return;
+                    }
+                    const partnerDoc = await getDoc(doc(db, "users", partnerUid));
+                    if (partnerDoc.exists()) {
+                        partnerUsername = partnerDoc.data().username;
+                    }
+
+                    activateGlobalUpdateListener();
+
+                    activatePresenceEngine();
+                    activateLiveCanvas();
+                    activateTelemetry();
+                    activateTimeline();
+                    activateFigmaMouseEngine();
+                    initInteractionListener(rtdb, currentBridgeId, currentUsername);
+
+                    // Reveal the UI with a clean transition
+                    const loadingScreen = document.getElementById('loadingCore');
+                    const appShell = document.getElementById('appShell');
+                    
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+                    if (appShell) appShell.style.display = 'flex';
+                    
+                    window.loadView('overview');
+                } else {
+                    // Handle case where user is authenticated but no Firestore doc exists
+                    console.warn("No user profile found in Firestore.");
                     window.location.href = 'nexus.html';
-                    return;
                 }
-                
-                const partnerDoc = await getDoc(doc(db, "users", partnerUid));
-                if (partnerDoc.exists()) {
-                    partnerUsername = partnerDoc.data().username;
-                }
-                activateGlobalUpdateListener(); 
-
-            // Reveal the UI
-            document.getElementById('loadingCore').style.display = 'none'; 
-            document.getElementById('appShell').style.display = 'flex';
-            window.loadView('overview');
-
-                // Boot up all engines
-                activatePresenceEngine(); 
-                activateLiveCanvas(); 
-                activateTelemetry(); 
-                activateTimeline();
-                activateFigmaMouseEngine();
-                
-                document.getElementById('loadingCore').style.display = 'none'; 
-                document.getElementById('appShell').style.display = 'flex';
-                window.loadView('overview');
+            } catch (error) {
+                console.error("Init Error:", error);
+                // Keep the user on the page but show error, or redirect if fatal
+                alert("Error connecting to bridge. Please check your connection.");
             }
-        } catch (error) { 
-            console.error("Init Error:", error);
-            alert("Error connecting to bridge."); 
+        } else {
+            // No user is signed in
+            window.location.href = 'index.html';
         }
-    } else { 
-        window.location.href = 'index.html'; 
-    }
-});
-
-// ==========================================
-// 4. BULLETPROOF PRESENCE ENGINE
-// ==========================================
+    });
+}
 function setOnlineStatus(isOnline) {
     if (!currentUser) return;
     const myRef = ref(rtdb, `presence/${currentUser.uid}`);
@@ -523,27 +521,73 @@ if (viewName === 'overview') {
         }
 
         box.innerHTML = `
+            <style>
+                /* Desktop Position */
+                .pulse-hub {
+                    position: absolute;
+                    top: 0px; 
+                    right: 130px; /* Sits exactly left of + Note */
+                    display: flex;
+                    gap: 10px;
+                    z-index: 9999; /* ⚡ CRITICAL FIX: Forces buttons above all invisible overlapping elements so they are clickable */
+                }
+                
+                /* Mobile Position */
+                @media (max-width: 650px) {
+                    .pulse-hub {
+                        top: 110px; /* ⚡ Pushes it completely below "View Notes" */
+                        right: 20px; /* Aligns to the right edge */
+                    }
+                    .view-title {
+                        padding-right: 0 !important;
+                        margin-bottom: 50px; 
+                    }
+                }
+
+                /* Visual Effects */
+                .pulse-overlay {
+                    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                    pointer-events: none; z-index: 99999;
+                }
+                .pulse-overlay.tap {
+                    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+                    animation: tapAnim 1s ease-out forwards;
+                }
+                .pulse-overlay.hug {
+                    background: rgba(255, 42, 95, 0.15);
+                    box-shadow: inset 0 0 150px rgba(255, 42, 95, 0.4);
+                    animation: hugAnim 3.5s ease-in-out forwards;
+                }
+                @keyframes tapAnim { 0% { transform: scale(0.5); opacity: 0; } 50% { opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+                @keyframes hugAnim { 0% { opacity: 0; } 25% { opacity: 1; } 50% { opacity: 0.5; } 75% { opacity: 1; } 100% { opacity: 0; } }
+            </style>
+
             <div style="position: relative; width: 100%; min-height: 100%; display: flex; flex-direction: column;">
                 
+                <div class="pulse-hub">
+                    <button class="pro-btn" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer;" onclick="window.triggerPulse('tap')">
+                        <span style="font-size: 18px;">👋</span>
+                    </button>
+                    <button class="pro-btn" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,42,95,0.1); border: 1px solid rgba(255,42,95,0.2); padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer;" onclick="window.triggerPulse('hug')">
+                        <span style="font-size: 18px;">🫂</span>
+                    </button>
+                </div>
+
                 <div class="note-system-anchor">
                     <button id="noteTrigger" class="note-trigger-btn" onclick="togglePulseTyper()">+ Note</button>
-                    
                     <button id="mobileNoteToggle" class="mobile-note-toggle-btn" onclick="toggleMobileNotes()">👀 View Notes</button>
                     
                     <div id="pulseTyper" class="bubbly-typer">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <span style="font-size: 11px; color: #0a84ff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">New Note</span>
+                            <span style="font-size: 11px; color: #0a84ff; font-weight: 700;">NEW NOTE</span>
                             <span style="font-size: 10px; color: var(--text-faded);">24H Auto-Delete</span>
                         </div>
-                        
                         <textarea id="pulseNoteInput" class="premium-textarea" placeholder="What's on your mind?..."></textarea>
-                        
                         <div class="typer-controls">
                             <button class="typer-btn btn-primary" onclick="savePulseNote()">Save Note</button>
                             <button class="typer-btn btn-secondary" style="width: 44px;" onclick="togglePulseTyper()">✕</button>
                         </div>
                     </div>
-
                     <div id="activeNoteDisplay"></div>
                 </div>
 
@@ -577,16 +621,13 @@ if (viewName === 'overview') {
                                 </div>
                             </div>
                         </div>
-                        
-                        <div id="eventsCarousel" class="events-carousel">
-                            </div>
+                        <div id="eventsCarousel" class="events-carousel"></div>
                     </div>
                 </div>
 
                 <div id="milestoneModal" class="modal-overlay">
                     <div class="premium-modal">
-                        <h3 style="margin-top:0; margin-bottom: 20px; color: white; font-family: 'Poppins', sans-serif;">Add Milestone</h3>
-                        
+                        <h3 style="margin-top:0; margin-bottom: 20px; color: white;">Add Milestone</h3>
                         <div style="display: flex; gap: 15px;">
                             <div class="input-group" style="width: 75px;">
                                 <label>Emoji</label>
@@ -597,12 +638,10 @@ if (viewName === 'overview') {
                                 <input type="text" id="msTitle" class="premium-input" placeholder="e.g. First Date">
                             </div>
                         </div>
-
                         <div class="input-group">
                             <label>Date</label>
-                            <input type="date" id="msDate" class="premium-input" style="color-scheme: dark;">
+                            <input type="date" id="msDate" class="premium-input">
                         </div>
-
                         <div style="display: flex; gap: 10px; margin-top: 25px;">
                             <button class="typer-btn btn-primary" onclick="saveMilestone()">Save to Timeline</button>
                             <button class="typer-btn btn-secondary" style="width: 70px;" onclick="closeMilestoneModal()">❌</button>
@@ -613,9 +652,9 @@ if (viewName === 'overview') {
             </div>
         `;
 
-        // Start the Engines
         syncPulseNoteUI();
-        initMilestonesEngine(); // Switched to the new Firebase Cloud Engine
+        initMilestonesEngine(); 
+        if(typeof window.initInteractionListener === 'function') window.initInteractionListener();
     }else if (viewName === 'journal') {
         box.innerHTML = `
             <div class="journal-layout" style="position: relative;">
@@ -674,6 +713,7 @@ if (viewName === 'overview') {
             if (unreadBadge) unreadBadge.classList.remove('active');
         }, 50);
     }
+    
 else if (viewName === 'music') {
         box.innerHTML = `
             <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: auto; padding: 20px;">
@@ -727,19 +767,12 @@ else if (viewName === 'music') {
                                         <button class="pro-btn btn-listen" style="padding: 12px 22px; border-radius: 30px; font-size: 13px; font-weight: 700;" onclick="window.toggleMusicPlayback()">▶ Play Sync</button>
                                         <button class="pro-btn btn-dedicate" style="padding: 12px 18px; border-radius: 30px; font-size: 13px;" onclick="window.openDedicationModal()">Add Music</button>
                                     </div>
-
                                     <button style="background:none; border:none; color: var(--text-faded); font-size: 18px; cursor: pointer;" onclick="window.forceExactSync()" title="Force Sync">🔄</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
+                                </div></div></div></div>
                     <div class="music-history-panel" style="height: 100%; max-height: 650px; background: rgba(255,255,255,0.02); border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); padding: 25px; display: flex; flex-direction: column;">
                         <h3 style="margin: 0 0 15px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-faded); font-weight: 700;">Recent Dedications</h3>
                         <div id="historyFeedList" class="history-feed" style="flex: 1; overflow-y: auto;"></div>
-                    </div>
-                </div>
-
+                    </div> </div>
                 <div id="musicModal" class="modal-overlay">
                     <div class="premium-modal" style="width: 90%; max-width: 400px;">
                         <h3 style="margin-top:0; margin-bottom: 20px; color: white;">Add a Song</h3>
@@ -853,87 +886,41 @@ else if (viewName === 'music') {
                 </div>
                 <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 15px; overflow: hidden;">
                     <div style="width: 75%; height: 100%; background: #0a84ff; border-radius: 4px; transition: 1s ease-out;"></div>
-                </div>
-            </div>
-        `;
-    }
-}
-
-// ==========================================
-// 10. MAPS, MATH, & LOGOUT UTILITIES
-// ==========================================
+                </div></div>`;}}
 window.openMap = function(lat, lon, titleText) {
     if(lat === 0 || lon === 0) return alert("Waiting for coordinate lock...");
-    
     document.getElementById('mapTitle').innerText = titleText;
     let mapUrl = `https://maps.google.com/maps?q=${lat},${lon}&t=m&z=14&output=embed&iwloc=near`;
-    
     document.getElementById('mapFrameContainer').innerHTML = `
         <iframe width="100%" height="100%" frameborder="0" style="border:0; border-radius: 0 0 28px 28px;" src="${mapUrl}" allowfullscreen></iframe>`;
-    
-    document.getElementById('mapModal').classList.add('active');
-}
-
+    document.getElementById('mapModal').classList.add('active');}
 window.closeMap = function() {
     document.getElementById('mapModal').classList.remove('active');
-    setTimeout(() => { document.getElementById('mapFrameContainer').innerHTML = ""; }, 400); 
-}
-
+    setTimeout(() => { document.getElementById('mapFrameContainer').innerHTML = ""; }, 400); }
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; 
     const dLat = (lat2 - lat1) * Math.PI / 180; 
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
               Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-              
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-    return Math.round(R * c);
-}
-
+    return Math.round(R * c);}
 window.executeLogout = async function() {
     setOnlineStatus(false);
-    setTimeout(() => { 
-        signOut(auth).then(() => { 
+    setTimeout(() => { signOut(auth).then(() => { 
             localStorage.removeItem("activeBridgeUser"); 
-            window.location.href = 'index.html'; 
-        }); 
-    }, 200); 
-}
-// ==========================================
-// 11. VERSION HISTORY & SNAPSHOTS
-// ==========================================
-
+            window.location.href = 'index.html'; }); }, 200); }
 async function saveVersionSnapshot(content) {
     const historyRef = ref(rtdb, `bridges/${currentBridgeId}/history`);
-    // We use push() to create a unique entry for every version
-    push(historyRef, {
-        content: content,
-        author: currentUsername,
-        timestamp: rtdbTime()
-    });
-}
-// ==========================================
-// 11. VERSION HISTORY ENGINE (Expanded)
-// ==========================================
-
-// ==========================================
-// 11. VERSION HISTORY & PREVIEW ENGINE
-// ==========================================
-
+    push(historyRef, {content: content, author: currentUsername, timestamp: rtdbTime()});}
 let originalContentBeforePreview = null;
-
 window.toggleVersionHistory = function() {
     const popup = document.getElementById('historyPopup');
     if (!popup) return;
-
     popup.classList.toggle('active');
-
     if (popup.classList.contains('active')) {
-        // Save current state so we can go back if they cancel the preview
         originalContentBeforePreview = sharedEditor.getContents();
         loadHistoryList();
-        
         const closeOnOutsideClick = (e) => {
             if (!popup.contains(e.target) && e.target.id !== 'historyBtn') {
                 cancelPreview(); // Snap back to current version on close
@@ -2039,3 +2026,112 @@ window.removeFromPlaylist = async function(songId) {
         alert("Could not remove song. Check your connection.");
     }
 }
+/// ==========================================
+// REAL-TIME INTERACTION ENGINE (HUGS & TAPS)
+// ==========================================
+
+// 1. Sending the Pulse
+window.triggerPulse = async function(type) {
+    window.playPulseAnimation(type, null, false, Date.now()); // Show preview locally
+    
+    if (navigator.vibrate) navigator.vibrate(type === 'tap' ? 15 : [50, 100, 50]);
+
+    try {
+        if (typeof rtdb !== 'undefined' && currentBridgeId && currentUsername) {
+            const pulseRef = ref(rtdb, `bridges/${currentBridgeId}/interactions`);
+            await set(pulseRef, {
+                type: type,
+                from: currentUsername,
+                timestamp: Date.now()
+            });
+        }
+    } catch (e) {
+        console.error("Pulse error:", e);
+    }
+};
+
+// 2. Receiving the Pulse (The "Waiting Embrace" Upgrade)
+window.initInteractionListener = function() {
+    if (typeof rtdb === 'undefined' || !currentBridgeId) return;
+    const pulseRef = ref(rtdb, `bridges/${currentBridgeId}/interactions`);
+    
+    onValue(pulseRef, (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.val();
+        
+        // Ignore if we sent it ourselves
+        if (data.from === currentUsername) return;
+
+        // Get the timestamp of the last pulse this device actually watched
+        const lastSeenPulse = parseInt(localStorage.getItem('lastSeenPulseTime') || '0');
+
+        // If this pulse in the database is newer than the last one we saw...
+        if (data.timestamp > lastSeenPulse) {
+            
+            // Mark it as "Seen" immediately so it doesn't loop on refresh
+            localStorage.setItem('lastSeenPulseTime', data.timestamp.toString());
+
+            // Determine if she was offline when you sent it (older than 30 seconds)
+            const isMissed = (Date.now() - data.timestamp) > 30000;
+
+            // Trigger the haptics and the visual effect, passing the exact timestamp
+            if (navigator.vibrate) navigator.vibrate(data.type === 'tap' ? [30, 50, 30] : [100, 200, 100]);
+            window.playPulseAnimation(data.type, data.from, isMissed, data.timestamp);
+        }
+    });
+};
+// 3. The Visual Effects & Cinematic Text Reveal (Time added to ALL scenarios)
+window.playPulseAnimation = function(type, senderName, isMissed = false, timestamp = null) {
+    if (document.querySelector('.pulse-overlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = `pulse-overlay ${type}`;
+    
+    // Determine the content dynamically
+    let emoji = type === 'hug' ? '🫂' : '👋';
+    let actionText = '';
+    
+    // Format the time elegantly (e.g., "10:30 PM")
+    // If no timestamp is provided (like a local click), use the exact current time
+    const timeToUse = timestamp ? new Date(timestamp) : new Date();
+    const timeString = timeToUse.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (senderName) {
+        if (isMissed) {
+            // THE WAITING EMBRACE: She opened the app later
+            actionText = type === 'hug' 
+                ? `${senderName} left a warm hug for you at ${timeString}...` 
+                : `${senderName} tapped you at ${timeString}...`;
+        } else {
+            // REAL-TIME: She is staring at the screen right now
+            actionText = type === 'hug' 
+                ? `${senderName} hugged you tightly at ${timeString}...` 
+                : `${senderName} is thinking of you at ${timeString}...`;
+        }
+    } else {
+        // LOCAL SENDER PREVIEW: What you see when you click the button
+        actionText = type === 'hug' 
+            ? `Sending a warm hug at ${timeString}...` 
+            : `Sending a gentle tap at ${timeString}...`;
+    }
+    
+    // Inject the structured DOM
+    overlay.innerHTML = `
+        <div class="pulse-message">
+            <div class="pulse-emoji">${emoji}</div>
+            <div class="pulse-text-part">${actionText}</div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+
+    // Ultra-smooth fade out to remove the overlay
+    setTimeout(() => {
+        overlay.style.transition = 'all 1.2s cubic-bezier(0.25, 1, 0.5, 1)';
+        overlay.style.opacity = '0';
+        overlay.style.backdropFilter = 'blur(0px)';
+        
+        // Remove from DOM after fade completes
+        setTimeout(() => overlay.remove(), 1200);
+    }, type === 'tap' ? 2500 : 4500); // Hugs last longer (4.5s)
+};
