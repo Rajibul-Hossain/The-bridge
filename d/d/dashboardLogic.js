@@ -4,7 +4,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, updateDoc, onSnapshot as firestoreSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { getDatabase, ref, onValue, set, get, push, onDisconnect, serverTimestamp as rtdbTime } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, get, push, onDisconnect, serverTimestamp as rtdbTime, update, remove} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDEbvPzoahjdt0w5s2SF7Usn3ZnOxF2v38",
@@ -674,7 +674,173 @@ if (viewName === 'overview') {
             if (unreadBadge) unreadBadge.classList.remove('active');
         }, 50);
     }
+else if (viewName === 'music') {
+        box.innerHTML = `
+            <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: auto; padding: 20px;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding: 0 5px; flex-shrink: 0;">
+                    <div style="flex: 1;">
+                        <h1 class="view-title" style="text-transform: none; margin: 0; font-size: clamp(24px, 5vw, 32px);">TwinTunes</h1>
+                        <p class="view-subtitle" style="margin: 2px 0 0 0; opacity: 0.7;">Your synchronized musical universe.</p>
+                    </div>
+                    
+                    <button class="pro-btn" 
+                            style="padding: 10px 16px; border-radius: 20px; font-size: 13px; color: white; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; flex-shrink: 0;" 
+                            onclick="window.togglePlaylistContainer(this)">
+                        <span style="font-size: 16px;">📁</span> Playlist
+                    </button>
+                </div>
+
+                <div class="music-page-grid" style="flex: 1; display: grid; grid-template-columns: 1fr 320px; gap: 20px; min-height: 0; align-items: center;">
+                    
+                    <div class="main-player-panel" style="height: 100%; max-height: 650px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; background: rgba(255,255,255,0.03); border-radius: 35px; border: 1px solid rgba(255,255,255,0.05); padding: 30px;">
+                        
+                        <div id="liveEqBars" class="top-right-eq" style="position: absolute; top: 25px; right: 25px;">
+                            <div class="live-bar"></div><div class="live-bar"></div><div class="live-bar"></div><div class="live-bar"></div>
+                        </div>
+
+                        <div id="vinylDisk" class="giant-album-art" style="width: min(240px, 50vh); height: min(240px, 50vh); margin-bottom: 30px;"></div>
+                        
+                        <div style="z-index: 1; text-align: center; width: 100%; max-width: 450px;">
+                            <h2 id="songTitle" style="font-size: clamp(28px, 6vw, 38px); font-weight: 800; margin: 0; color: white; letter-spacing: -1px; text-shadow: 0 4px 15px rgba(0,0,0,0.5);">Loading...</h2>
+                            <p id="songArtist" style="font-size: 16px; color: #ff2a5f; font-weight: 600; margin: 5px 0 20px 0; text-transform: uppercase; letter-spacing: 1.5px;"></p>
+                            
+                            <div style="background: rgba(0,0,0,0.4); padding: 15px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 25px; backdrop-filter: blur(10px);">
+                                <p id="songMessage" style="font-size: 14px; color: #e0e0e0; font-style: italic; margin: 0; line-height: 1.6;"></p>
+                            </div>
+
+                            <div class="playback-controller" style="width: 100%; max-width: 400px; margin: 0 auto;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--text-faded); margin-bottom: 8px; font-family: 'Poppins', sans-serif;">
+                                    <span id="currentTimeDisplay">0:00</span>
+                                    <span id="totalTimeDisplay">0:00</span>
+                                </div>
+                                
+                                <div id="progressBarContainer" style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; position: relative; margin-bottom: 25px;" onclick="window.scrubMusic(event)">
+                                    <div id="progressBarFill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff2a5f, #ff719a); border-radius: 10px; transition: width 0.1s linear; box-shadow: 0 0 10px rgba(255,42,95,0.5);"></div>
+                                    <div id="progressDot" style="position: absolute; top: -3px; left: 0%; width: 12px; height: 12px; background: white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform: translateX(-50%); pointer-events: none; opacity: 0; transition: opacity 0.2s;"></div>
+                                </div>
+
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
+                                    <button id="btnRepeat" style="background:none; border:none; color: var(--text-faded); font-size: 18px; cursor: pointer;" onclick="window.toggleRepeat()" title="Repeat Song">🔁 </button>
+                                    
+                                    <div style="display: flex; gap: 12px;">
+                                        <button class="pro-btn btn-listen" style="padding: 12px 22px; border-radius: 30px; font-size: 13px; font-weight: 700;" onclick="window.toggleMusicPlayback()">▶ Play Sync</button>
+                                        <button class="pro-btn btn-dedicate" style="padding: 12px 18px; border-radius: 30px; font-size: 13px;" onclick="window.openDedicationModal()">Add Music</button>
+                                    </div>
+
+                                    <button style="background:none; border:none; color: var(--text-faded); font-size: 18px; cursor: pointer;" onclick="window.forceExactSync()" title="Force Sync">🔄</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="music-history-panel" style="height: 100%; max-height: 650px; background: rgba(255,255,255,0.02); border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); padding: 25px; display: flex; flex-direction: column;">
+                        <h3 style="margin: 0 0 15px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-faded); font-weight: 700;">Recent Dedications</h3>
+                        <div id="historyFeedList" class="history-feed" style="flex: 1; overflow-y: auto;"></div>
+                    </div>
+                </div>
+
+                <div id="musicModal" class="modal-overlay">
+                    <div class="premium-modal" style="width: 90%; max-width: 400px;">
+                        <h3 style="margin-top:0; margin-bottom: 20px; color: white;">Add a Song</h3>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <input type="text" id="songSearchQuery" class="premium-input" style="flex: 1;" placeholder="Search for a song...">
+                            <button class="pro-btn" style="padding: 10px 15px; background: rgba(255,42,95,0.15); color: #ff2a5f; border-radius: 14px; box-shadow: none;" onclick="window.searchSongMetadata(this)">🔍 Search</button>
+                        </div>
+                        <div id="artPreviewContainer" style="display: none; align-items: center; gap: 15px; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; backdrop-filter: blur(10px);">
+                            <img id="previewArtImg" src="" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover;">
+                            <div style="flex: 1; display: flex; flex-direction: column; overflow: auto;">
+                                <input type="text" id="dedicateTitle" class="premium-input" style="background: transparent; border: none; padding: 0; font-size: 14px; font-weight: 700; color: white; margin-bottom: 2px; box-shadow: none;" readonly>
+                                <input type="text" id="dedicateArtist" class="premium-input" style="background: transparent; border: none; padding: 0; font-size: 11px; color: var(--text-faded); box-shadow: none;" readonly>
+                            </div>
+                            <button class="pro-btn" style="width: 35px; height: 35px; border-radius: 50%; padding: 0; background: rgba(255,255,255,0.1); display: flex; justify-content: center;" title="Add to Playlist" onclick="window.addToPlaylistOnly()">
+                                <span style="font-size: 18px;">➕</span>
+                            </button>
+                            <input type="hidden" id="hiddenAlbumArtUrl">
+                            <input type="hidden" id="hiddenYtId">
+                        </div>
+                        <div class="input-group">
+                            <label style="font-size: 12px; color: var(--text-faded);">Your Message</label>
+                            <input type="text" id="dedicateMessage" class="premium-input" placeholder="Say something sweet...">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 25px;">
+                            <button class="pro-btn btn-dedicate" style="flex: 1; justify-content: center; padding: 12px;" onclick="window.sendDedication()">Send & Play</button>
+                            <button class="pro-btn btn-listen" style="width: 60px; justify-content: center; padding: 12px;" onclick="window.closeDedicationModal()">✕</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="playlistContainer" class="morphing-playlist">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="margin:0; color: white; font-weight: 800; font-size: 20px;">Bridge Playlist</h3>
+                            <p style="margin:0; font-size: 11px; color: var(--text-faded);">Your shared musical journey</p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="pro-btn" style="width: 38px; height: 38px; border-radius: 50%; background: rgba(255,42,95,0.15); color: #ff2a5f; padding: 0;" onclick="window.togglePlaylistContainer(); window.openDedicationModal();">➕</button>
+                            <button class="pro-btn btn-listen" style="width: 38px; height: 38px; border-radius: 50%; justify-content: center; padding: 0;" onclick="window.togglePlaylistContainer()">✕</button>
+                        </div>
+                    </div>
+                    <div id="playlistItems" class="playlist-scroll-area"></div>
+                </div>
+
+                <style>
+                    .morphing-playlist {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%) scale(0);
+                        width: 92%;
+                        max-width: 380px;
+                        height: 75%;
+                        max-height: 520px;
+                        background: rgba(20, 20, 25, 0.95);
+                        backdrop-filter: blur(30px) saturate(180%);
+                        -webkit-backdrop-filter: blur(30px) saturate(180%);
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        border-radius: 32px;
+                        z-index: 3000;
+                        padding: 25px;
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+                        opacity: 0;
+                        visibility: hidden;
+                        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+                        pointer-events: none;
+                    }
+
+                    .morphing-playlist.active {
+                        opacity: 1;
+                        visibility: visible;
+                        transform: translate(-50%, -50%) scale(1);
+                        pointer-events: all;
+                    }
+
+                    .playlist-scroll-area {
+                        height: calc(100% - 70px);
+                        overflow-y: auto;
+                        padding-right: 5px;
+                    }
+
+                    .playlist-scroll-area::-webkit-scrollbar { width: 3px; }
+                    .playlist-scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+                </style>
+            </div>
+        `;
+
+ 
+
+// ... (end of your box.innerHTML string) ...
+        
+        // 1. Boot the Main Engine
+        if(typeof window.initMusicEngine === 'function') window.initMusicEngine(); 
+        
+        // 2. Boot the Progress Loop
+        if(typeof window.startProgressLoop === 'function') window.startProgressLoop(); 
+        
+        // 3. NEW: Boot the Playlist Listener specifically
+        if(typeof window.startPlaylistListener === 'function') window.startPlaylistListener();
     
+    }
     else if (viewName === 'tracker') {
         box.innerHTML = `
             <h1 class="view-title">Project Logistics</h1>
@@ -703,8 +869,7 @@ window.openMap = function(lat, lon, titleText) {
     let mapUrl = `https://maps.google.com/maps?q=${lat},${lon}&t=m&z=14&output=embed&iwloc=near`;
     
     document.getElementById('mapFrameContainer').innerHTML = `
-        <iframe width="100%" height="100%" frameborder="0" style="border:0; border-radius: 0 0 28px 28px;" src="${mapUrl}" allowfullscreen></iframe>
-    `;
+        <iframe width="100%" height="100%" frameborder="0" style="border:0; border-radius: 0 0 28px 28px;" src="${mapUrl}" allowfullscreen></iframe>`;
     
     document.getElementById('mapModal').classList.add('active');
 }
@@ -825,7 +990,6 @@ window.previewVersion = async function(versionId) {
     item.classList.add('previewing');
     document.getElementById(`actions-${versionId}`).style.display = 'flex';
 
-    // 2. Load the content into the editor (Programmatically, so it doesn't sync to Lavanya yet)
     const snap = await get(ref(rtdb, `bridges/${currentBridgeId}/history/${versionId}`));
     if (snap.exists()) {
         isProgrammaticUpdate = true;
@@ -850,7 +1014,6 @@ window.restoreVersion = async function(versionId) {
     if (snap.exists()) {
         const versionData = snap.val();
         
-        // Push to main sync node (This updates Lavanya's screen too)
         set(ref(rtdb, `bridges/${currentBridgeId}/canvasData`), {
             content: versionData.content,
             lastEditor: `${currentUsername} (Restored)`,
@@ -992,7 +1155,6 @@ window.savePulseNote = async function() {
 }
 
 window.deleteMyPulseNote = async function() {
-    // Allows you to delete your own note early without touching Lavanya's
     await set(ref(rtdb, `bridges/${currentBridgeId}/pulseNotes/${currentUser.uid}`), null);
     document.getElementById('pulseNoteInput').value = ""; // Clear the typer
 }
@@ -1194,12 +1356,686 @@ window.initMilestonesEngine = function() {
             `;
         });
 
-        // 4. Always add the "Add Event" button at the end of the carousel
         carousel.innerHTML += `
             <div class="event-pill add-event-pill" onclick="openMilestoneModal()">
                 <div style="font-size: 20px; margin-bottom: 5px;">+</div>
                 <div class="event-title" style="color: #0a84ff;">Add Event</div>
             </div>
-        `;
+        `;});}
+// ==========================================
+// 16. FLAGSHIP SYNCHRONIZED MUSIC ENGINE 
+// (Apple UI + Official YT API + Firebase Sync + Listen Together + Telemetry)
+// ==========================================
+
+// --- 1. MODAL UI CONTROLS ---
+window.openDedicationModal = function() {
+    const modal = document.getElementById('musicModal');
+    if(modal) modal.classList.add('active');
+}
+
+window.closeDedicationModal = function() {
+    const modal = document.getElementById('musicModal');
+    if(modal) modal.classList.remove('active');
+    
+    document.getElementById('songSearchQuery').value = "";
+    document.getElementById('dedicateTitle').value = "";
+    document.getElementById('dedicateArtist').value = "";
+    document.getElementById('dedicateMessage').value = "";
+    document.getElementById('hiddenAlbumArtUrl').value = "";
+    document.getElementById('hiddenYtId').value = "";
+    
+    const previewContainer = document.getElementById('artPreviewContainer');
+    if(previewContainer) previewContainer.style.display = 'none';
+}
+
+// --- 2. ZERO-CLICK SEARCH ENGINE ---
+// --- 2. SEARCH ENGINE (REBUILT FOR STABILITY) ---
+window.searchSongMetadata = async function(btnElement) {
+    const queryInput = document.getElementById('songSearchQuery');
+    const query = queryInput ? queryInput.value : "";
+    
+    // Pro-fix: Use the passed element directly, or fallback to selector
+    const searchBtn = btnElement || document.querySelector('button[onclick*="searchSongMetadata"]');
+    
+    const YOUTUBE_API_KEY = "AIzaSyDyU-K6yp6iNhpwF0GOfmHsnj8_qHMYhCo"; 
+    
+    if(!query) return alert("Type a song name first, bro!");
+    
+    // Set UI Loading state safely
+    if (searchBtn) {
+        searchBtn.innerHTML = "⏳ Scanning...";
+        searchBtn.style.opacity = "0.7";
+        searchBtn.disabled = true;
+    }
+
+    try {
+        // STEP 1: Apple Metadata
+        const appleRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`);
+        const appleData = await appleRes.json();
+
+        if(appleData.results && appleData.results.length > 0) {
+            const track = appleData.results[0];
+            const highResArt = track.artworkUrl100.replace('100x100bb', '500x500bb'); 
+            
+            // Safe DOM Injection
+            const artImg = document.getElementById('previewArtImg');
+            const titleInp = document.getElementById('dedicateTitle');
+            const artistInp = document.getElementById('dedicateArtist');
+            const hiddenArt = document.getElementById('hiddenAlbumArtUrl');
+            const previewBox = document.getElementById('artPreviewContainer');
+
+            if (artImg) artImg.src = highResArt;
+            if (titleInp) titleInp.value = track.trackName;
+            if (artistInp) artistInp.value = track.artistName;
+            if (hiddenArt) hiddenArt.value = highResArt;
+
+            // STEP 2: YouTube Audio Lock
+            const audioQuery = `${track.trackName} ${track.artistName} lyric video`;
+            const ytApiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(audioQuery)}&type=video&videoEmbeddable=true&maxResults=1&key=${YOUTUBE_API_KEY}`;
+            
+            const ytRes = await fetch(ytApiUrl);
+            const ytData = await ytRes.json();
+            
+            if (ytData.error) throw new Error(ytData.error.message);
+
+            if (ytData.items && ytData.items.length > 0) {
+                const hiddenYt = document.getElementById('hiddenYtId');
+                if (hiddenYt) hiddenYt.value = ytData.items[0].id.videoId;
+                if (previewBox) previewBox.style.display = 'flex';
+                console.log("✅ Audio Lock Acquired via Official API");
+            } else {
+                alert("YouTube strictly blocked this song. Try another!");
+            }
+        } else {
+            alert("Couldn't find that song on Apple Music.");
+        }
+    } catch (e) {
+        console.error("Master Engine Error:", e);
+        alert(`API Error: ${e.message || "Connection failed."}`);
+    }
+
+    // Always reset button state safely
+    if (searchBtn) {
+        searchBtn.innerHTML = "🔍 Search";
+        searchBtn.style.opacity = "1";
+        searchBtn.disabled = false;
+    }
+}// --- 3. FIREBASE SYNC & DISPATCH ---
+// --- 3. FIREBASE SYNC, DISPATCH & PLAYLIST INDEXING ---
+window.sendDedication = async function() {
+    // 1. Precise DOM Extraction
+    const title = document.getElementById('dedicateTitle')?.value;
+    const artist = document.getElementById('dedicateArtist')?.value || "Unknown Artist";
+    const message = document.getElementById('dedicateMessage')?.value;
+    const albumArt = document.getElementById('hiddenAlbumArtUrl')?.value;
+    const ytId = document.getElementById('hiddenYtId')?.value;
+
+    // 2. Critical Validation
+    if (!ytId || !albumArt) {
+        return alert("Please search for a song first to lock the audio coordinates!");
+    }
+
+    // 3. Construct the Master Song Object
+    const songObject = {
+        title: title,
+        artist: artist,
+        albumArt: albumArt,
+        ytId: ytId, 
+        dedicatedBy: currentUsername,
+        timestamp: Date.now() // Precise ms for playlist sorting
+    };
+
+    try {
+        // A. Update the LIVE BROADCAST (Forces partner to sync)
+        await set(ref(rtdb, `bridges/${currentBridgeId}/music/nowPlaying`), {
+            ...songObject,
+            message: message,
+            playbackState: 'paused',
+            seekTime: 0,
+            actionTimestamp: Date.now()
+        });
+
+        // B. Update the PERMANENT PLAYLIST (The Library)
+        // We use the ytId as the key to prevent duplicate songs in the playlist
+        await set(ref(rtdb, `bridges/${currentBridgeId}/music/playlist/${ytId}`), songObject);
+
+        // C. Update the HISTORY FEED (The Log)
+        await push(ref(rtdb, `bridges/${currentBridgeId}/music/history`), {
+            ...songObject,
+            serverTime: rtdbTime()
+        });
+
+        console.log("✅ Song Broadcasted & Saved to Bridge Playlist.");
+        window.closeDedicationModal();
+
+    } catch (error) {
+        console.error("Firebase Sync Error:", error);
+        alert("Failed to sync with the Bridge. Check your connection!");
+    }
+}
+// --- 4. LIVE UI & FIREBASE LISTENER (CRASH-PROOF SYNC) ---
+window.initMusicEngine = function() {
+    const musicRef = ref(rtdb, `bridges/${currentBridgeId}/music/nowPlaying`);
+    
+    onValue(musicRef, (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.val();
+
+        // A. SAFELY UPDATE THE MUSIC TAB UI
+        const titleEl = document.getElementById('songTitle');
+        const artistEl = document.getElementById('songArtist');
+        const msgEl = document.getElementById('songMessage');
+        const diskEl = document.getElementById('vinylDisk');
+        const listenBtn = document.querySelector('.btn-listen'); 
+        
+        if (titleEl) {
+            titleEl.innerText = data.title;
+            artistEl.innerText = data.artist;
+            msgEl.innerText = data.message ? `"${data.message}"\n— ${data.dedicatedBy}` : `Played by ${data.dedicatedBy}`;
+
+            if (diskEl && data.albumArt) {
+                diskEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.5)), url('${data.albumArt}')`;
+                diskEl.style.backgroundSize = "cover";
+                diskEl.style.backgroundPosition = "center";
+            }
+
+            if (listenBtn) {
+                listenBtn.setAttribute('onclick', 'window.toggleMusicPlayback()');
+                listenBtn.innerHTML = window.isAudioPlaying ? "⏸ Pause Sync" : "▶ Listen Sync";
+                listenBtn.style.opacity = "1";
+            }
+        }
+
+        // B. BACKGROUND AUDIO CUEING 
+        if (window.ytAudioPlayer && typeof window.ytAudioPlayer.cueVideoById === 'function') {
+            const currentUrl = window.ytAudioPlayer.getVideoUrl();
+            if (!currentUrl || !currentUrl.includes(data.ytId)) {
+                window.ytAudioPlayer.cueVideoById(data.ytId);
+                if (!window.isAudioPlaying && typeof window.togglePlaybackUI === 'function') {
+                    window.togglePlaybackUI(false); 
+                }
+            }
+        }
+
+        // C. THE MASTER SYNC INTERCEPTOR
+        if (data.playbackState) {
+            const isPlayingRemote = data.playbackState === 'playing';
+            
+            if (data.lastActionBy === currentUsername) {
+                // We pressed play/scrubbed. Don't popup, just act locally.
+                if (isPlayingRemote) {
+                    if(window.ytAudioPlayer) window.ytAudioPlayer.playVideo();
+                    if(typeof window.togglePlaybackUI === 'function') window.togglePlaybackUI(true);
+                } else {
+                    if(window.ytAudioPlayer) window.ytAudioPlayer.pauseVideo();
+                    if(typeof window.togglePlaybackUI === 'function') window.togglePlaybackUI(false);
+                }
+            } else {
+                // PARTNER PRESSED PLAY, PAUSE, OR SCRUBBED
+                window.pendingSyncTime = data.seekTime || 0;
+                window.pendingSyncTimestamp = data.actionTimestamp || Date.now();
+                window.pendingYtId = data.ytId; 
+
+                // ⚡ NEW: Scrub Interceptor 
+                if (data.isScrubbing && window.isAudioPlaying && window.ytAudioPlayer) {
+                    const timePassed = (Date.now() - window.pendingSyncTimestamp) / 1000;
+                    window.ytAudioPlayer.seekTo(window.pendingSyncTime + timePassed, true);
+                    console.log(`📡 Partner scrubbed timeline. Auto-syncing to ${window.pendingSyncTime.toFixed(2)}s`);
+                }
+
+                if (isPlayingRemote && !window.isAudioPlaying) {
+                    const joinTitle = document.getElementById('globalSyncJoinTitle');
+                    if (joinTitle) joinTitle.innerText = `${data.lastActionBy} is listening`;
+                    
+                    const joinModal = document.getElementById('globalSyncJoinModal');
+                    if (joinModal) joinModal.classList.add('active');
+
+                } else if (!isPlayingRemote && window.isAudioPlaying) {
+                    if(window.ytAudioPlayer) window.ytAudioPlayer.pauseVideo();
+                    if(typeof window.togglePlaybackUI === 'function') window.togglePlaybackUI(false);
+                }
+            }
+        }
     });
+
+    // History Feed logic
+    const historyRef = ref(rtdb, `bridges/${currentBridgeId}/music/history`);
+    onValue(historyRef, (snap) => {
+        const feedEl = document.getElementById('historyFeedList');
+        if (!feedEl) return;
+        feedEl.innerHTML = "";
+        if (!snap.exists()) {
+            feedEl.innerHTML = `<p style="color: var(--text-faded); font-size: 13px; text-align: center; margin-top: 20px;">No history yet. Start the playlist!</p>`;
+            return;
+        }
+        let tracks = [];
+        snap.forEach(child => { tracks.push(child.val()); });
+        tracks.reverse().forEach(track => {
+            const dateStr = new Date(track.timestamp).toLocaleDateString();
+            const artHtml = track.albumArt 
+                ? `<img src="${track.albumArt}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">`
+                : `<div style="width: 100%; height: 100%; border-radius: 10px; background: linear-gradient(135deg, #ff2a5f, #ff719a); display: flex; justify-content: center; align-items: center; font-size: 16px;">🎵</div>`;
+
+            feedEl.innerHTML += `
+                <div class="history-track">
+                    <div style="width: 45px; height: 45px; flex-shrink: 0;">${artHtml}</div>
+                    <div style="flex: 1; overflow: hidden;">
+                        <div style="font-size: 14px; font-weight: 700; color: white; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${track.title}</div>
+                        <div style="font-size: 11px; color: var(--text-faded); margin-top: 2px;">${track.artist} • By ${track.dedicatedBy}</div>
+                    </div>
+                    <div style="font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 600;">${dateStr}</div>
+                </div>
+            `;
+        });
+    });
+}
+
+// --- 5. PROGRESS BAR & TIMELINE SCRUBBING ---
+
+window.progressInterval = null;
+window.isRepeatOn = false;
+
+function formatTime(seconds) {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+window.startProgressLoop = function() {
+    if (window.progressInterval) clearInterval(window.progressInterval);
+    
+    window.progressInterval = setInterval(() => {
+        if (window.ytAudioPlayer && window.isAudioPlaying && typeof window.ytAudioPlayer.getCurrentTime === 'function') {
+            const current = window.ytAudioPlayer.getCurrentTime();
+            const total = window.ytAudioPlayer.getDuration();
+            
+            const currEl = document.getElementById('currentTimeDisplay');
+            const totalEl = document.getElementById('totalTimeDisplay');
+            const fillEl = document.getElementById('progressBarFill');
+            const dotEl = document.getElementById('progressDot');
+            
+            if (currEl) currEl.innerText = formatTime(current);
+            if (totalEl) totalEl.innerText = formatTime(total);
+            
+            if (total > 0 && fillEl && dotEl) {
+                const percent = (current / total) * 100;
+                fillEl.style.width = `${percent}%`;
+                dotEl.style.left = `${percent}%`;
+            }
+        }
+    }, 100);
+}
+
+window.scrubMusic = async function(event) {
+    if (!window.ytAudioPlayer || typeof window.ytAudioPlayer.getDuration !== 'function') return;
+    
+    const container = document.getElementById('progressBarContainer');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const percent = Math.max(0, Math.min(1, clickX / rect.width)); 
+    
+    const totalTime = window.ytAudioPlayer.getDuration();
+    const seekToTime = totalTime * percent;
+    
+    window.ytAudioPlayer.seekTo(seekToTime, true);
+    
+    await update(ref(rtdb, `bridges/${currentBridgeId}/music/nowPlaying`), {
+        playbackState: window.isAudioPlaying ? 'playing' : 'paused',
+        lastActionBy: currentUsername,
+        seekTime: seekToTime,
+        actionTimestamp: Date.now(),
+        isScrubbing: true 
+    });
+}
+
+window.toggleRepeat = function() {
+    window.isRepeatOn = !window.isRepeatOn;
+    const btn = document.getElementById('btnRepeat');
+    if (btn) {
+        btn.style.color = window.isRepeatOn ? '#ff2a5f' : 'var(--text-faded)';
+        btn.style.textShadow = window.isRepeatOn ? '0 0 10px rgba(255,42,95,0.5)' : 'none';
+    }
+}
+
+window.forceExactSync = function() {
+    if (window.pendingSyncTime && window.pendingSyncTimestamp) {
+        const timePassed = (Date.now() - window.pendingSyncTimestamp) / 1000;
+        const exactTarget = window.pendingSyncTime + timePassed;
+        if (window.ytAudioPlayer) window.ytAudioPlayer.seekTo(exactTarget, true);
+        console.log(`🔄 Forced sync alignment to ${exactTarget.toFixed(2)}s`);
+    }
+}
+
+// --- 6. THE GLOBAL SYNC MODAL & CALCULATION ENGINE ---
+
+function initGlobalSyncModal() {
+    if (!document.getElementById('globalSyncJoinModal')) {
+        const modalDiv = document.createElement('div');
+        modalDiv.id = 'globalSyncJoinModal';
+        modalDiv.className = 'modal-overlay';
+        modalDiv.style.zIndex = '99999'; 
+        modalDiv.innerHTML = `
+            <div class="premium-modal" style="text-align: center; max-width: 320px; padding: 40px 30px;">
+                <div style="font-size: 50px; margin-bottom: 15px; animation: flagshipBreathe 3s infinite alternate;">🎧</div>
+                <h3 id="globalSyncJoinTitle" style="margin-top:0; margin-bottom: 10px; color: white; font-weight: 800;">Partner is listening</h3>
+                <p style="color: var(--text-faded); font-size: 13px; margin-bottom: 30px; line-height: 1.5;">Do you want to tune in and experience this track perfectly synced?</p>
+                <div style="display: flex; gap: 10px;">
+                    <button class="pro-btn btn-dedicate" style="flex: 1; justify-content: center; box-shadow: 0 10px 25px rgba(255, 42, 95, 0.4);" onclick="window.acceptSyncJoin()">Tune In</button>
+                    <button class="pro-btn btn-listen" style="flex: 1; justify-content: center;" onclick="window.closeSyncJoinModal()">Later</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+    }
+}
+initGlobalSyncModal();
+
+window.closeSyncJoinModal = function() {
+    const modal = document.getElementById('globalSyncJoinModal');
+    if (modal) modal.classList.remove('active');
+}
+
+window.acceptSyncJoin = function() {
+    window.closeSyncJoinModal();
+    try {
+        if (window.ytAudioPlayer && typeof window.ytAudioPlayer.seekTo === 'function') {
+            if (window.pendingYtId) {
+                window.ytAudioPlayer.loadVideoById(window.pendingYtId);
+            }
+            const timePassedSincePlay = (Date.now() - window.pendingSyncTimestamp) / 1000;
+            const exactTargetTime = window.pendingSyncTime + timePassedSincePlay;
+            
+            window.ytAudioPlayer.seekTo(exactTargetTime, true);
+            window.ytAudioPlayer.playVideo();
+            
+            if(typeof window.togglePlaybackUI === 'function') window.togglePlaybackUI(true);
+            console.log(`✅ Synced! Network drift compensated by ${timePassedSincePlay.toFixed(2)}s.`);
+        }
+    } catch (error) {
+        console.error("Sync Engine Failed:", error);
+    }
+}
+
+// --- 7. NETWORKED AUDIO ENGINE & YOUTUBE INIT ---
+window.ytAudioPlayer = null;
+window.isAudioPlaying = false;
+
+function bootPersistentAudioEngine() {
+    if (!document.getElementById('persistent-audio-bunker')) {
+        const audioBunker = document.createElement('div');
+        audioBunker.id = 'persistent-audio-bunker';
+        audioBunker.style.cssText = 'position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;';
+        audioBunker.innerHTML = '<div id="hiddenYtPlayer"></div>';
+        document.body.appendChild(audioBunker);
+    }
+    if (!window.YT) {
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+}
+
+window.onYouTubeIframeAPIReady = function() {
+    window.ytAudioPlayer = new YT.Player('hiddenYtPlayer', {
+        height: '1', width: '1',
+        host: 'https://www.youtube-nocookie.com', 
+        playerVars: { 'autoplay': 0, 'controls': 0, 'playsinline': 1, 'origin': window.location.origin },
+        events: {
+            'onReady': function() { console.log("✅ Audio Engine Armed & Ready."); },
+            'onStateChange': function(event) {
+                // ⚡ NEW: Repeat Engine Catch
+                if (event.data === YT.PlayerState.PLAYING) window.togglePlaybackUI(true);
+                if (event.data === YT.PlayerState.PAUSED) window.togglePlaybackUI(false);
+                if (event.data === YT.PlayerState.ENDED) {
+                    if (window.isRepeatOn) {
+                        window.ytAudioPlayer.seekTo(0);
+                        window.ytAudioPlayer.playVideo();
+                    } else {
+                        window.togglePlaybackUI(false);
+                    }
+                }
+            },
+            'onError': function(e) {
+                console.error("YouTube Error Code:", e.data);
+                if (e.data === 150 || e.data === 101) alert("Track blocked by label. Try a different song.");
+            }
+        }
+    });
+}
+
+// THE BROADCASTING PLAY BUTTON
+window.toggleMusicPlayback = async function() {
+    if (!window.ytAudioPlayer || typeof window.ytAudioPlayer.getPlayerState !== 'function') {
+        return alert("The audio matrix is still booting up, give it 2 seconds...");
+    }
+    
+    const playerState = window.ytAudioPlayer.getPlayerState();
+    const isCurrentlyPlaying = (playerState === 1 || playerState === 3);
+    const newState = isCurrentlyPlaying ? 'paused' : 'playing';
+    
+    const currentSeekTime = window.ytAudioPlayer.getCurrentTime() || 0;
+
+    await update(ref(rtdb, `bridges/${currentBridgeId}/music/nowPlaying`), {
+        playbackState: newState,
+        lastActionBy: currentUsername,
+        seekTime: currentSeekTime,
+        actionTimestamp: Date.now(),
+        isScrubbing: false 
+    });
+}
+
+window.togglePlaybackUI = function(isPlaying) {
+    window.isAudioPlaying = isPlaying;
+    const btn = document.querySelector('.btn-listen');
+    if (btn) btn.innerHTML = isPlaying ? "⏸ Pause Sync" : "▶ Listen Sync";
+    
+    const eq = document.getElementById('liveEqBars');
+    const disk = document.getElementById('vinylDisk');
+    const sideEq = document.getElementById('sidebarMusicEq');
+    const dot = document.getElementById('progressDot'); 
+    
+    if (isPlaying) {
+        if (eq) eq.classList.add('playing');
+        if (disk) disk.classList.add('playing');
+        if (sideEq) sideEq.classList.add('playing');
+        if(typeof window.startProgressLoop === 'function') window.startProgressLoop(); // ⚡ Kickstart progress bar
+        if (dot) dot.style.opacity = '1'; 
+    } else {
+        if (eq) eq.classList.remove('playing');
+        if (disk) disk.classList.remove('playing');
+        if (sideEq) sideEq.classList.remove('playing');
+        if (window.progressInterval) clearInterval(window.progressInterval); // ⚡ Stop progress bar
+        if (dot) dot.style.opacity = '0';
+    }
+}
+
+// Start the boot sequence
+bootPersistentAudioEngine();
+window.togglePlaylistContainer = function(btnElement) {
+    const container = document.getElementById('playlistContainer');
+    if (!container) return;
+
+    const isActive = container.classList.contains('active');
+
+    if (!isActive && btnElement) {
+        const rect = btnElement.getBoundingClientRect();
+        const parentRect = container.parentElement.getBoundingClientRect();
+        
+        // Calculate the button position relative to the center of the screen
+        const x = (rect.left + rect.width / 2) - parentRect.left;
+        const y = (rect.top + rect.height / 2) - parentRect.top;
+
+        // Origin logic needs to be precise for the compact pop
+        container.style.transformOrigin = `${x}px ${y}px`;
+        container.classList.add('active');
+    } else {
+        container.classList.remove('active');
+    }
+}
+// --- 9. PLAYLIST ADDITION ENGINE ---
+// --- 9. PLAYLIST ADDITION ENGINE (CORRECTED) ---
+
+window.addToPlaylistOnly = async function() {
+    // 1. Extract values with Optional Chaining for safety
+    const title = document.getElementById('dedicateTitle')?.value;
+    const artist = document.getElementById('dedicateArtist')?.value;
+    const albumArt = document.getElementById('hiddenAlbumArtUrl')?.value;
+    const ytId = document.getElementById('hiddenYtId')?.value;
+
+    // 2. Critical Check
+    if (!ytId || !albumArt) return alert("Search for a song first!");
+
+    // 3. Define the data object
+    const finalSongData = {
+        title: title,
+        artist: artist,
+        albumArt: albumArt,
+        ytId: ytId,
+        addedBy: currentUsername,
+        timestamp: Date.now()
+    };
+
+    try {
+        // ⚡ FIX: We are now using finalSongData correctly here
+        await set(ref(rtdb, `bridges/${currentBridgeId}/music/playlist/${ytId}`), finalSongData);
+        
+        // 4. Premium Visual Feedback
+        const addBtn = document.querySelector('button[onclick*="addToPlaylistOnly"]');
+        if(addBtn) {
+            const originalIcon = addBtn.innerHTML;
+            addBtn.innerHTML = "✅";
+            addBtn.style.background = "rgba(46, 213, 115, 0.2)";
+            addBtn.style.pointerEvents = "none"; // Prevent double-clicks
+
+            setTimeout(() => { 
+                addBtn.innerHTML = originalIcon; 
+                addBtn.style.background = "rgba(255,255,255,0.1)";
+                addBtn.style.pointerEvents = "all";
+            }, 2000);
+        }
+        
+        console.log("📁 Success: Song added to playlist library.");
+    } catch (e) {
+        console.error("Playlist Sync Error:", e);
+        alert("Database connection failed. Try again!");
+    }
+}// --- 10. ROBUST PLAYLIST LIVE-FEED (WITH REMOVE OPTION) ---
+window.startPlaylistListener = function() {
+    const playlistRef = ref(rtdb, `bridges/${currentBridgeId}/music/playlist`);
+    
+    onValue(playlistRef, (snap) => {
+        const listEl = document.getElementById('playlistItems');
+        if (!listEl) return; 
+
+        listEl.innerHTML = "";
+
+        if (!snap.exists()) {
+            listEl.innerHTML = `<p style="color:var(--text-faded); text-align:center; margin-top:60px;">Library is empty.</p>`;
+            return;
+        }
+
+        let playlistArray = [];
+        snap.forEach(child => {
+            playlistArray.push({ id: child.key, ...child.val() });
+        });
+
+        playlistArray.reverse().forEach(song => {
+            const item = document.createElement('div');
+            item.className = 'playlist-item';
+            item.style.display = 'flex';
+            item.style.alignItems = 'center';
+            item.style.gap = '12px';
+            item.style.padding = '10px';
+            item.style.marginBottom = '8px';
+            item.style.borderRadius = '16px';
+            item.style.background = 'rgba(255,255,255,0.03)';
+            item.style.cursor = 'pointer';
+
+            item.innerHTML = `
+                <img src="${song.albumArt}" style="width: 42px; height: 42px; border-radius: 10px; object-fit: cover;" onclick='window.playFromPlaylist(${JSON.stringify(song)})'>
+                
+                <div style="flex: 1; overflow: hidden;" onclick='window.playFromPlaylist(${JSON.stringify(song)})'>
+                    <div style="color: white; font-weight: 700; font-size: 13px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${song.title}</div>
+                    <div style="color: var(--text-faded); font-size: 11px;">${song.artist}</div>
+                </div>
+
+                <button class="pro-btn" 
+                        style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.05); color: #ff4757; padding:0; display:flex; justify-content:center; align-items:center; border:none;" 
+                        onclick="event.stopPropagation(); window.removeFromPlaylist('${song.id}')">
+                    <span style="font-size: 14px;">🗑️</span>
+                </button>
+            `;
+            listEl.appendChild(item);
+        });
+    });
+}
+// --- 11. PLAYLIST DELETION ENGINE ---
+
+window.removeFromPlaylist = async function(songId) {
+    // 1. Professional Confirmation (Optional but recommended)
+    if (!confirm("Remove this song from the bridge library?")) return;
+
+    try {
+        // 2. Remove from Firebase
+        const songRef = ref(rtdb, `bridges/${currentBridgeId}/music/playlist/${songId}`);
+        await remove(songRef);
+        
+        console.log(`🗑️ Track ${songId} purged from library.`);
+    } catch (e) {
+        console.error("Deletion failed:", e);
+        alert("Couldn't remove the song. Try again!");
+    }
+}// ==========================================
+// 11. PLAYLIST INTERACTION ENGINE (ROBUST)
+// ==========================================
+
+// --- PLAY TRIGGER ---
+window.playFromPlaylist = async function(songData) {
+    if (!songData || !songData.ytId) return console.error("Invalid Song Data");
+
+    console.log("💿 Playlist Selection: " + songData.title);
+
+    try {
+        // Broadcast the selection to the partner via nowPlaying
+        await update(ref(rtdb, `bridges/${currentBridgeId}/music/nowPlaying`), {
+            title: songData.title,
+            artist: songData.artist,
+            albumArt: songData.albumArt,
+            ytId: songData.ytId,
+            playbackState: 'playing', // Auto-play on selection
+            lastActionBy: currentUsername,
+            seekTime: 0,
+            actionTimestamp: Date.now(),
+            isHeartbeat: false,
+            isScrubbing: false
+        });
+
+        // Close drawer for a premium transition
+        if (typeof window.togglePlaylistContainer === 'function') {
+            window.togglePlaylistContainer();
+        }
+    } catch (e) {
+        console.error("Playback Sync Failed:", e);
+    }
+}
+
+// --- REMOVE TRIGGER ---
+window.removeFromPlaylist = async function(songId) {
+    if (!songId) return;
+
+    // Professional UI Confirmation
+    const confirmed = confirm("Remove this track from the bridge library?");
+    if (!confirmed) return;
+
+    try {
+        const songRef = ref(rtdb, `bridges/${currentBridgeId}/music/playlist/${songId}`);
+        await remove(songRef);
+        console.log("🗑️ Purged song ID: " + songId);
+    } catch (e) {
+        console.error("Purge Failed:", e);
+        alert("Could not remove song. Check your connection.");
+    }
 }

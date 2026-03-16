@@ -795,3 +795,215 @@
     background: rgba(10, 132, 255, 0.2);
     border-style: solid;
 }
+/* ==========================================
+   21. ONE UI / iOS FLAGSHIP MUSIC ROOM
+   ========================================== */
+
+/* The Grid Layout */
+.music-page-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 30px;
+    margin-top: 20px;
+    height: calc(100vh - 160px);
+    font-family: 'Poppins', sans-serif;
+}
+
+/* --- IMMERSIVE PLAYER PANEL --- */
+.main-player-panel {
+    background: linear-gradient(145deg, rgba(25, 25, 30, 0.6), rgba(15, 15, 20, 0.8));
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 40px; /* Sweeping One UI curve */
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(50px) saturate(250%);
+    -webkit-backdrop-filter: blur(50px) saturate(250%);
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Deep Ambient Mesh Glow */
+.main-player-panel::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle at 40% 40%, rgba(255, 42, 95, 0.2), transparent 50%),
+                radial-gradient(circle at 60% 60%, rgba(10, 132, 255, 0.15), transparent 50%);
+    animation: flagshipBreathe 15s ease-in-out infinite alternate;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes flagshipBreathe {
+    0% { transform: rotate(0deg) scale(1); opacity: 0.8; }
+    100% { transform: rotate(15deg) scale(1.2); opacity: 1; }
+}
+
+/* --- THE VINYL RECORD (Photorealistic) --- */
+.giant-album-art {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    /* Creates physical-looking vinyl grooves */
+    background: repeating-radial-gradient(#111, #111 4px, #1a1a1a 5px, #1a1a1a 6px);
+    border: 2px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.8), 
+        inset 0 0 20px rgba(0,0,0,1),
+        0 0 0 15px rgba(255, 255, 255, 0.02); /* Faint outer halo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+    margin-bottom: 40px;
+    animation: spinDisk 6s linear infinite;
+    animation-play-state: paused;
+}
+
+.giant-album-art.playing { animation-play-state: running; }
+
+/* The Center Label */
+.giant-album-art::after {
+    content: '';
+    position: absolute;
+    width: 60px; height: 60px;
+    background: linear-gradient(135deg, #ff2a5f, #ff719a);
+    border-radius: 50%;
+    border: 6px solid #0a0a0c;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+@keyframes spinDisk { 100% { transform: rotate(360deg); } }
+
+/* --- PREMIUM ACTION BUTTONS --- */
+.music-action-row {
+    display: flex;
+    gap: 16px;
+    z-index: 1;
+    margin-top: 10px;
+}
+
+.pro-btn {
+    border: none;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 28px;
+    border-radius: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    backdrop-filter: blur(20px);
+}
+
+/* Physical Spring Physics on Click */
+.pro-btn:active { transform: scale(0.92); }
+
+.btn-dedicate {
+    background: linear-gradient(135deg, #ff2a5f, #ff0040);
+    color: white;
+    box-shadow: 0 10px 25px rgba(255, 42, 95, 0.4), inset 0 2px 2px rgba(255,255,255,0.2);
+}
+
+.btn-dedicate:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(255, 42, 95, 0.6), inset 0 2px 2px rgba(255,255,255,0.3);
+}
+
+.btn-listen {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.btn-listen:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px);
+}
+
+/* --- THE LIVE EQ INDICATOR --- */
+.top-right-eq {
+    position: absolute;
+    top: 40px; right: 40px;
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 24px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.top-right-eq.playing { opacity: 1; }
+
+.live-bar {
+    width: 6px;
+    background: #ff2a5f;
+    border-radius: 4px;
+    animation: bouncePro 0.8s ease-in-out infinite alternate;
+}
+.live-bar:nth-child(1) { animation-duration: 0.7s; height: 60%; }
+.live-bar:nth-child(2) { animation-duration: 0.9s; height: 100%; }
+.live-bar:nth-child(3) { animation-duration: 0.6s; height: 40%; }
+.live-bar:nth-child(4) { animation-duration: 0.8s; height: 80%; }
+
+@keyframes bouncePro {
+    0% { transform: scaleY(0.2); }
+    100% { transform: scaleY(1); }
+}
+
+/* --- THE HISTORY PANEL --- */
+.music-history-panel {
+    background: rgba(20, 20, 25, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 40px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(30px);
+}
+
+.history-feed {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+    padding-right: 10px;
+}
+
+.history-feed::-webkit-scrollbar { width: 4px; }
+.history-feed::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+
+.history-track {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    padding: 14px 18px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.history-track:hover { 
+    background: rgba(255, 255, 255, 0.06); 
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(6px); 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* Mobile Adjustments */
+@media (max-width: 900px) {
+    .music-page-grid { grid-template-columns: 1fr; height: auto; }
+    .giant-album-art { width: 180px; height: 180px; }
+}

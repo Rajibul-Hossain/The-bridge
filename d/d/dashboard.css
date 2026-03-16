@@ -469,3 +469,42 @@ body, html { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFo
 .sidebar-badge.active {
     display: block;
 }
+/* ==========================================
+   22. SIDEBAR LIVE EQ ICON
+   ========================================== */
+
+.sidebar-eq {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 12px;
+    width: 16px;
+    margin-right: 8px; /* Spaces it from the text */
+}
+
+.sidebar-eq .s-bar {
+    width: 3px;
+    background: var(--text-faded); /* Idle grey state */
+    border-radius: 3px;
+    height: 100%;
+    transform: scaleY(0.3); /* Squashed down when idle */
+    transform-origin: bottom; /* Ensures it grows upward, not from the center */
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* --- THE ACTIVE PLAYING STATE --- */
+.sidebar-eq.playing .s-bar {
+    background: #ff2a5f; /* Flagship Apple Music Pink */
+    box-shadow: 0 0 8px rgba(255, 42, 95, 0.5); /* Soft neon glow */
+    animation: sidebarBouncePro 0.8s ease-in-out infinite alternate;
+}
+
+/* Staggered animation timings for organic movement */
+.sidebar-eq.playing .s-bar:nth-child(1) { animation-duration: 0.6s; height: 80%; }
+.sidebar-eq.playing .s-bar:nth-child(2) { animation-duration: 0.8s; height: 100%; }
+.sidebar-eq.playing .s-bar:nth-child(3) { animation-duration: 0.7s; height: 60%; }
+
+@keyframes sidebarBouncePro {
+    0% { transform: scaleY(0.2); }
+    100% { transform: scaleY(1); }
+}
