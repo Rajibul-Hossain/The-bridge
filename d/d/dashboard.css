@@ -508,3 +508,36 @@ body, html { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFo
     0% { transform: scaleY(0.2); }
     100% { transform: scaleY(1); }
 }
+/* --- 💎 UNIVERSAL MASTER TOOLTIP --- */
+#global-master-tooltip {
+    position: fixed;
+    top: 0; left: 0;
+    background: rgba(20, 20, 25, 0.85);
+    backdrop-filter: blur(25px) saturate(200%);
+    -webkit-backdrop-filter: blur(25px) saturate(200%);
+    color: #ffffff;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+    border: 0.5px solid rgba(255,255,255,0.15);
+    pointer-events: none;
+    z-index: 99999999;
+    
+    /* 3D Spring Physics Origin */
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, calc(-100% + 15px)) scale(0.85);
+    transition: opacity 0.2s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+}
+
+#global-master-tooltip.active {
+    opacity: 1;
+    visibility: visible;
+    /* Springs up right above the element */
+    transform: translate(-50%, calc(-100% - 10px)) scale(1);
+}

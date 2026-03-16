@@ -12,11 +12,22 @@ const firebaseConfig = {
     messagingSenderId: "925623567345",
     appId: "1:925623567345:web:10c9d1e5873a4df7983a50",
     measurementId: "G-6E4K45TWLV"};
+    import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+
+// Initialize Storage
+
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const rtdb = getDatabase(app); 
+export const storage = getStorage(app);
 Quill.register('modules/cursors', QuillCursors);
+// (Make sure to export sRef, uploadBytesResumable, and getDownloadURL globally or import them here)
+window.storage = storage;
+window.sRef = sRef;
+window.uploadBytesResumable = uploadBytesResumable;
+window.getDownloadURL = getDownloadURL;
 let currentUser = null; 
 let currentUsername = ""; 
 let currentBridgeId = null; 
@@ -60,7 +71,7 @@ function initAuthListener() {
                     }
 
                     activateGlobalUpdateListener();
-
+                    initGlobalReceiptEngine();
                     activatePresenceEngine();
                     activateLiveCanvas();
                     activateTelemetry();
@@ -202,7 +213,6 @@ let sharedEditor = null;
 let isProgrammaticUpdate = false; 
 let cursorModule = null;
 
-let typingTimer;
 let typingIndicatorTimer; // Restored the timer variable
 function activateLiveCanvas() {
     const canvasRef = ref(rtdb, `bridges/${currentBridgeId}/canvasData`);
@@ -565,12 +575,13 @@ if (viewName === 'overview') {
             <div style="position: relative; width: 100%; min-height: 100%; display: flex; flex-direction: column;">
                 
                 <div class="pulse-hub">
-                    <button class="pro-btn" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer;" onclick="window.triggerPulse('tap')">
-                        <span style="font-size: 18px;">👋</span>
-                    </button>
-                    <button class="pro-btn" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,42,95,0.1); border: 1px solid rgba(255,42,95,0.2); padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer;" onclick="window.triggerPulse('hug')">
-                        <span style="font-size: 18px;">🫂</span>
-                    </button>
+<button data-tip="Send a Tap" class="pro-btn" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer;" onclick="window.triggerPulse('tap')">
+    <span style="font-size: 18px;">👋</span>
+</button>
+
+<button data-tip="Send a Hug" class="pro-btn" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,42,95,0.1); border: 1px solid rgba(255,42,95,0.2); padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer;" onclick="window.triggerPulse('hug')">
+    <span style="font-size: 18px;">🫂</span>
+</button>
                 </div>
 
                 <div class="note-system-anchor">
@@ -584,8 +595,8 @@ if (viewName === 'overview') {
                         </div>
                         <textarea id="pulseNoteInput" class="premium-textarea" placeholder="What's on your mind?..."></textarea>
                         <div class="typer-controls">
-                            <button class="typer-btn btn-primary" onclick="savePulseNote()">Save Note</button>
-                            <button class="typer-btn btn-secondary" style="width: 44px;" onclick="togglePulseTyper()">✕</button>
+                            <button class="typer-btn btn-primary" data-tip="Save Note for ur love"  onclick="savePulseNote()">Save Note</button>
+                            <button class="typer-btn btn-secondary" data-tip="Close" style="width: 44px;" onclick="togglePulseTyper()">✕</button>
                         </div>
                     </div>
                     <div id="activeNoteDisplay"></div>
@@ -713,18 +724,479 @@ if (viewName === 'overview') {
             if (unreadBadge) unreadBadge.classList.remove('active');
         }, 50);
     }
+if (viewName === 'messages') {
+        // 1. Initialize State
+        window.activeMsgId = null;
+        window.activeMsgText = "";
+
+        box.innerHTML = `
+            <style>
+/* =========================================================
+   🪐 THE SYNCHRONIZED FLAGSHIP ENGINE (OVERWHELMING TIER)
+   ========================================================= */
+
+:root {
+    /* Advanced Spring Physics (iOS inspired) */
+    --spring-intense: cubic-bezier(0.24, 1.15, 0.28, 1.05);
+    --spring-smooth: cubic-bezier(0.25, 1, 0.5, 1);
     
-else if (viewName === 'music') {
+    /* Dynamic Spatial Glass (VisionOS / iOS 26 inspired) */
+    --glass-surface: rgba(18, 18, 24, 0.45);
+    --glass-highlight: inset 0 1px 1px rgba(255, 255, 255, 0.15), 
+                       inset 0 -1px 1px rgba(0, 0, 0, 0.4);
+    --glass-border: 0.5px solid rgba(255, 255, 255, 0.08);
+    
+    /* Brand Gradients */
+    --accent-primary: linear-gradient(135deg, #FF2A5F 0%, #FF6B3D 100%);
+    --oled-bg: linear-gradient(-45deg, #050508, #0B030A, #020611, #000000);
+}
+
+.chat-wrapper {
+    display: flex; 
+    flex-direction: column;
+    height: 100%; 
+    width: 100%;
+    position: relative; 
+    overflow: hidden;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--oled-bg);
+    background-size: 400% 400%;
+    animation: ambientOLED 20s ease-in-out infinite alternate;
+    perspective: 1200px; /* Deepened perspective for spatial UI */
+    -webkit-font-smoothing: antialiased;
+}
+
+@keyframes ambientOLED { 
+    0% { background-position: 0% 50%; } 
+    50% { background-position: 100% 50%; } 
+    100% { background-position: 0% 50%; } 
+}
+
+.chat-header-godtier {
+    position: absolute; 
+    top: 0; left: 0; right: 0;
+    padding: 28px 24px 20px 24px; /* One UI reachability spacing */
+    background: var(--glass-surface);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border-bottom: var(--glass-border);
+    box-shadow: 0 15px 35px -10px rgba(0,0,0,0.5);
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    z-index: 100;
+    animation: dropIn3D 0.9s var(--spring-intense) forwards;
+}
+
+.avatar-godtier {
+    width: 48px; 
+    height: 48px; 
+    border-radius: 18px; /* Smooth squarcle instead of perfect circle */
+    background: linear-gradient(135deg, #2A2A30, #16161A);
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    box-shadow: var(--glass-highlight), 0 8px 16px rgba(0,0,0,0.4);
+    position: relative;
+}
+
+.avatar-godtier::after {
+    content: ''; 
+    position: absolute; 
+    bottom: -2px; 
+    right: -2px;
+    width: 14px; 
+    height: 14px; 
+    background: #32D74B; 
+    border-radius: 50%;
+    border: 2.5px solid #0D0D11; 
+    box-shadow: 0 0 12px rgba(50, 215, 75, 0.8);
+    animation: pulseOnline 2.5s var(--spring-smooth) infinite;
+}
+
+.chat-title-pro { 
+    margin: 0; 
+    font-size: 19px; 
+    font-weight: 600; 
+    color: #F5F5F7; 
+    letter-spacing: 0.3px; 
+}
+
+.chat-status-typing { 
+    margin: 4px 0 0 0; 
+    font-size: 12px; 
+    color: #FF2A5F; 
+    font-weight: 500; 
+    display: flex; 
+    align-items: center; 
+    gap: 4px; 
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-dot { 
+    width: 5px; 
+    height: 5px; 
+    background: #FF2A5F; 
+    border-radius: 50%; 
+    animation: blink 1.4s infinite both; 
+}
+.status-dot:nth-child(2) { animation-delay: 0.2s; }
+.status-dot:nth-child(3) { animation-delay: 0.4s; }
+
+.chat-feed {
+    flex: 1; 
+    overflow-y: auto;
+    
+    /* Adjusted padding to sit perfectly inside the new glass pane */
+    padding: 100px 20px 100px 20px; 
+    
+    /* Give it breathing room from the actual screen edges so the radius makes sense */
+    margin: 8px 12px; 
+    
+    /* 💎 Pure Glassmorphism Treatment */
+    background: rgba(22, 22, 26, 0.4); 
+    backdrop-filter: blur(20px) saturate(120%);
+    -webkit-backdrop-filter: blur(20px) saturate(120%);
+    
+    /* Premium iOS squarcle curvature */
+    border-radius: 32px; 
+    
+    /* Machined edge lighting (sub-pixel borders) */
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 
+                0 10px 30px rgba(0, 0, 0, 0.3);
+    
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; /* Slightly tightened gap for better grouping */
+    scroll-behavior: smooth;
+    
+    /* Fixed the awkward fade: Now tight, smooth, and intentional */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 6%, black 94%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 6%, black 94%, transparent 100%);
+}
+
+/* Crucial: Hide the scrollbar so it doesn't break the glass edge illusion */
+.chat-feed::-webkit-scrollbar { 
+    display: none; 
+}
+
+.message-row { 
+    display: flex; 
+    width: 100%; 
+    opacity: 0; 
+    transform: translateY(40px) scale(0.92) rotateX(-12deg); 
+}
+.message-row.sent { justify-content: flex-end; transform-origin: right center; }
+.message-row.received { justify-content: flex-start; transform-origin: left center; }
+.message-row.animate-in { animation: popIn3D 0.8s var(--spring-intense) forwards; }
+
+.bubble { 
+    max-width: 75%; 
+    padding: 16px 22px; 
+    font-size: 16px; 
+    line-height: 1.5; 
+    position: relative; 
+    cursor: pointer; 
+    transition: transform 0.2s var(--spring-smooth), filter 0.2s ease; 
+}
+.bubble:active { transform: scale(0.96); filter: brightness(0.9); }
+
+.bubble.sent { 
+    background: var(--accent-primary); 
+    color: #FFF; 
+    border-radius: 22px 22px 6px 22px; 
+    box-shadow: 0 12px 28px -6px rgba(255, 42, 95, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3); 
+    text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.bubble.received { 
+    background: rgba(35, 35, 42, 0.65); 
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 22px 22px 22px 6px; 
+    color: #E8E8ED; 
+    border: var(--glass-border);
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+}
+
+.msg-time { 
+    font-size: 11px; 
+    opacity: 0.5; 
+    margin-top: 8px; 
+    display: block; 
+    font-weight: 500; 
+    letter-spacing: 0.3px;
+}
+.sent .msg-time { text-align: right; color: rgba(255,255,255,0.8); }
+
+.input-godtier {
+    position: absolute; 
+    bottom: 24px; 
+    left: 20px; 
+    right: 20px;
+    background: rgba(20, 20, 26, 0.75); 
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border-radius: 40px; 
+    padding: 10px 10px 10px 24px;
+    display: flex; 
+    align-items: flex-end; 
+    gap: 12px; 
+    z-index: 100;
+    border: var(--glass-border);
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6);
+    animation: riseUp3D 0.9s var(--spring-intense) forwards;
+    transition: all 0.3s var(--spring-smooth);
+}
+.input-godtier:focus-within {
+    background: rgba(25, 25, 32, 0.85);
+    border-color: rgba(255, 42, 95, 0.4);
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6), 0 0 20px rgba(255, 42, 95, 0.15);
+}
+
+.chat-textarea { 
+    flex: 1; 
+    background: transparent; 
+    border: none; 
+    color: #F5F5F7; 
+    font-family: inherit; 
+    font-size: 16px; 
+    line-height: 1.4;
+    resize: none; 
+    outline: none; 
+    padding: 12px 0; 
+    max-height: 120px;
+}
+.chat-textarea::placeholder { color: rgba(255,255,255,0.3); }
+
+.send-core-btn { 
+    width: 44px; 
+    height: 44px; 
+    border-radius: 50%; 
+    border: none; 
+    background: var(--accent-primary); 
+    color: white; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    cursor: pointer; 
+    box-shadow: 0 8px 16px rgba(255, 42, 95, 0.3);
+    transition: all 0.2s var(--spring-smooth);
+}
+.send-core-btn:hover { transform: scale(1.05); }
+.send-core-btn:active { transform: scale(0.92); box-shadow: 0 4px 8px rgba(255, 42, 95, 0.2); }
+
+/* --- ⚡ THE FIXED HAPTIC OVERLAY --- */
+.haptic-overlay-pro { 
+    position: fixed; 
+    top: 0; left: 0; 
+    width: 100vw; height: 100vh; 
+    background: rgba(0, 0, 0, 0.4); 
+    z-index: 999999; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    opacity: 0; 
+    pointer-events: none; 
+    transition: opacity 0.4s var(--spring-smooth), backdrop-filter 0.4s;
+}
+.haptic-overlay-pro.active { 
+    opacity: 1; 
+    pointer-events: auto; 
+    backdrop-filter: blur(25px) saturate(150%); 
+    -webkit-backdrop-filter: blur(25px) saturate(150%);
+}
+
+.menu-3d { 
+    width: 300px; 
+    background: rgba(28, 28, 34, 0.75); 
+    backdrop-filter: blur(50px); 
+    -webkit-backdrop-filter: blur(50px);
+    border-radius: 24px; 
+    overflow: hidden; 
+    border: var(--glass-border);
+    transform: rotateX(15deg) translateY(60px) scale(0.9);
+    opacity: 0; 
+    transition: all 0.5s var(--spring-intense);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1);
+}
+.haptic-overlay-pro.active .menu-3d { 
+    transform: rotateX(0deg) translateY(0) scale(1); 
+    opacity: 1; 
+}
+
+.haptic-btn-pro { 
+    width: 100%; 
+    padding: 20px 24px; 
+    background: transparent; 
+    border: none; 
+    border-bottom: var(--glass-border); 
+    color: #F5F5F7; 
+    font-size: 16px; 
+    font-weight: 500;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    cursor: pointer; 
+    font-family: inherit;
+    transition: background 0.2s ease;
+}
+.haptic-btn-pro:last-child { border-bottom: none; }
+.haptic-btn-pro:hover { background: rgba(255,255,255,0.05); }
+.haptic-btn-pro:active { background: rgba(255,255,255,0.08); }
+.haptic-btn-pro.danger { color: #FF453A; }
+
+/* --- KEYFRAMES --- */
+@keyframes dropIn3D { 
+    0% { transform: translateY(-100%) rotateX(-15deg); opacity: 0; } 
+    100% { transform: translateY(0) rotateX(0deg); opacity: 1; } 
+}
+@keyframes riseUp3D { 
+    0% { transform: translateY(60px) scale(0.95); opacity: 0; } 
+    100% { transform: translateY(0) scale(1); opacity: 1; } 
+}
+@keyframes popIn3D { 
+    0% { opacity: 0; transform: translateY(30px) scale(0.9) rotateX(-10deg); } 
+    100% { opacity: 1; transform: translateY(0) scale(1) rotateX(0deg); } 
+}
+@keyframes blink { 
+    0%, 100% { opacity: 0.3; transform: scale(0.8); } 
+    50% { opacity: 1; transform: scale(1.1); } 
+}
+@keyframes pulseOnline {
+    0% { box-shadow: 0 0 0 0 rgba(50, 215, 75, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(50, 215, 75, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(50, 215, 75, 0); }
+}
+            </style>
+<div class="chat-wrapper">
+                <div class="chat-header-godtier">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="avatar-godtier">🫂</div>
+                        <div class="header-text-group">
+                            <h2 class="chat-title-pro">${partnerUsername}</h2>
+                            <p class="chat-status-typing" id="headerTypingStatus" style="display: none;">
+                                Typing <span class="status-dot"></span><span class="status-dot"></span><span class="status-dot"></span>
+                            </p>
+                            <p class="chat-status-typing" id="headerOnlineStatus" style="color: #32d74b;">Connected</p>
+                        </div>
+                    </div>
+                    <button class="icon-btn-pro" data-tip="Start Audio Call" style="background:transparent; color:white;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    </button>
+                </div>
+
+                <div class="chat-feed" id="chatFeed"></div>
+
+                <div id="mediaUploadProgress" style="position: absolute; bottom: 85px; left: 20px; right: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border-radius: 10px; padding: 8px 15px; display: none; align-items: center; gap: 10px; z-index: 90; border: 1px solid rgba(255,255,255,0.1);">
+                    <div style="flex: 1; height: 4px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden;">
+                        <div id="uploadProgressBar" style="width: 0%; height: 100%; background: #32d74b; transition: width 0.2s;"></div>
+                    </div>
+                    <span id="uploadProgressText" style="color: white; font-size: 10px; font-weight: 700;">0%</span>
+                </div>
+
+                <div class="input-godtier">
+                    <button data-tip="Attach Media" class="icon-btn-pro" onclick="document.getElementById('mediaUploader').click()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                    </button>
+                    
+                    <textarea id="chatInputMessage" class="chat-textarea" placeholder="iMessage..." rows="1" oninput="window.handleTypingSignal()"></textarea>
+                    
+                    <button id="voiceRecordBtn" data-tip="Hold to Record" class="icon-btn-pro" style="background: rgba(10, 132, 255, 0.15); color: #0a84ff; transition: all 0.2s ease;" onmousedown="window.startVoiceRecord()" onmouseup="window.stopVoiceRecord()" ontouchstart="window.startVoiceRecord()" ontouchend="window.stopVoiceRecord()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                    </button>
+
+                    <button data-tip="Send Message" class="send-core-btn" onclick="window.sendTextMessage()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+
+                <div id="hapticMenuOverlay" class="haptic-overlay-pro" onclick="window.closeMessageMenu()">
+                    <div class="menu-3d" onclick="event.stopPropagation()">
+                        <button class="haptic-btn-pro" onclick="window.copySelectedMsg()">Copy Text</button>
+                        <div id="authorActions" style="display: none;">
+                            <button class="haptic-btn-pro" id="editBtn" onclick="window.editSelectedMsg()">Edit Message</button>
+                            <button class="haptic-btn-pro danger" onclick="window.unsendSelectedMsg()">Undo Send</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <input type="file" id="mediaUploader" accept="image/*,video/*" style="display:none;" onchange="window.handleMediaSelection(event)">
+            </div>
+        `;
+
+        // --- ⚡ DYNAMIC MENU FUNCTIONS ---
+        window.openMessageMenu = function(msgId, text, isSentByMe, timestamp) {
+            if (navigator.vibrate) navigator.vibrate([20, 40]); 
+            window.activeMsgId = msgId;
+            window.activeMsgText = text;
+            
+            const overlay = document.getElementById('hapticMenuOverlay');
+            const authorActions = document.getElementById('authorActions');
+            const editBtn = document.getElementById('editBtn');
+
+            if (isSentByMe) {
+                authorActions.style.display = 'block';
+                const fifteenMins = 900000;
+                const isEditable = (Date.now() - timestamp) < fifteenMins;
+                editBtn.style.display = isEditable ? 'flex' : 'none';
+            } else {
+                authorActions.style.display = 'none';
+            }
+            overlay.classList.add('active');
+        };
+
+        window.closeMessageMenu = function() {
+            document.getElementById('hapticMenuOverlay').classList.remove('active');
+        };
+
+        window.copySelectedMsg = function() {
+            navigator.clipboard.writeText(window.activeMsgText);
+            window.closeMessageMenu();
+        };
+
+        window.editSelectedMsg = function() {
+            const input = document.getElementById('chatInputMessage');
+            const sendBtn = document.querySelector('.send-core-btn');
+            input.value = window.activeMsgText;
+            input.focus();
+            
+            const originalIcon = sendBtn.innerHTML;
+            sendBtn.innerHTML = "✅"; 
+            const editId = window.activeMsgId;
+            
+            sendBtn.onclick = async () => {
+                const newText = input.value.trim();
+                if (newText && newText !== window.activeMsgText) {
+                    await update(ref(rtdb, `bridges/${currentBridgeId}/messages/${editId}`), { text: newText, edited: true });
+                }
+                input.value = "";
+                sendBtn.innerHTML = originalIcon;
+                sendBtn.onclick = window.sendTextMessage;
+            };
+            window.closeMessageMenu();
+        };
+
+        window.unsendSelectedMsg = async function() {
+            await remove(ref(rtdb, `bridges/${currentBridgeId}/messages/${window.activeMsgId}`));
+            window.closeMessageMenu();
+        };
+
+        if (typeof window.initChatEngine === 'function') window.initChatEngine();
+    }else if (viewName === 'music') {
         box.innerHTML = `
             <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: auto; padding: 20px;">
                 
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding: 0 5px; flex-shrink: 0;">
                     <div style="flex: 1;">
-                        <h1 class="view-title" style="text-transform: none; margin: 0; font-size: clamp(24px, 5vw, 32px);">TwinTunes</h1>
+                        <h1 class="view-title" data-tip="TwinTunes Engine" style="text-transform: none; margin: 0; font-size: clamp(24px, 5vw, 32px);">TwinTunes</h1>
                         <p class="view-subtitle" style="margin: 2px 0 0 0; opacity: 0.7;">Your synchronized musical universe.</p>
                     </div>
                     
-                    <button class="pro-btn" 
+                    <button class="pro-btn" data-tip="View Shared Playlist"
                             style="padding: 10px 16px; border-radius: 20px; font-size: 13px; color: white; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; flex-shrink: 0;" 
                             onclick="window.togglePlaylistContainer(this)">
                         <span style="font-size: 16px;">📁</span> Playlist
@@ -735,17 +1207,17 @@ else if (viewName === 'music') {
                     
                     <div class="main-player-panel" style="height: 100%; max-height: 650px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; background: rgba(255,255,255,0.03); border-radius: 35px; border: 1px solid rgba(255,255,255,0.05); padding: 30px;">
                         
-                        <div id="liveEqBars" class="top-right-eq" style="position: absolute; top: 25px; right: 25px;">
+                        <div id="liveEqBars" class="top-right-eq" data-tip="Live Audio Sync" style="position: absolute; top: 25px; right: 25px;">
                             <div class="live-bar"></div><div class="live-bar"></div><div class="live-bar"></div><div class="live-bar"></div>
                         </div>
 
-                        <div id="vinylDisk" class="giant-album-art" style="width: min(240px, 50vh); height: min(240px, 50vh); margin-bottom: 30px;"></div>
+                        <div id="vinylDisk" class="giant-album-art" data-tip="Currently Playing" style="width: min(240px, 50vh); height: min(240px, 50vh); margin-bottom: 30px;"></div>
                         
                         <div style="z-index: 1; text-align: center; width: 100%; max-width: 450px;">
-                            <h2 id="songTitle" style="font-size: clamp(28px, 6vw, 38px); font-weight: 800; margin: 0; color: white; letter-spacing: -1px; text-shadow: 0 4px 15px rgba(0,0,0,0.5);">Loading...</h2>
-                            <p id="songArtist" style="font-size: 16px; color: #ff2a5f; font-weight: 600; margin: 5px 0 20px 0; text-transform: uppercase; letter-spacing: 1.5px;"></p>
+                            <h2 id="songTitle" data-tip="Track Title" style="font-size: clamp(28px, 6vw, 38px); font-weight: 800; margin: 0; color: white; letter-spacing: -1px; text-shadow: 0 4px 15px rgba(0,0,0,0.5);">Loading...</h2>
+                            <p id="songArtist" data-tip="Artist" style="font-size: 16px; color: #ff2a5f; font-weight: 600; margin: 5px 0 20px 0; text-transform: uppercase; letter-spacing: 1.5px;"></p>
                             
-                            <div style="background: rgba(0,0,0,0.4); padding: 15px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 25px; backdrop-filter: blur(10px);">
+                            <div data-tip="Dedication Note" style="background: rgba(0,0,0,0.4); padding: 15px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 25px; backdrop-filter: blur(10px);">
                                 <p id="songMessage" style="font-size: 14px; color: #e0e0e0; font-style: italic; margin: 0; line-height: 1.6;"></p>
                             </div>
 
@@ -755,30 +1227,36 @@ else if (viewName === 'music') {
                                     <span id="totalTimeDisplay">0:00</span>
                                 </div>
                                 
-                                <div id="progressBarContainer" style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; position: relative; margin-bottom: 25px;" onclick="window.scrubMusic(event)">
+                                <div id="progressBarContainer" data-tip="Scrub Timeline" style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; position: relative; margin-bottom: 25px;" onclick="window.scrubMusic(event)">
                                     <div id="progressBarFill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff2a5f, #ff719a); border-radius: 10px; transition: width 0.1s linear; box-shadow: 0 0 10px rgba(255,42,95,0.5);"></div>
                                     <div id="progressDot" style="position: absolute; top: -3px; left: 0%; width: 12px; height: 12px; background: white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform: translateX(-50%); pointer-events: none; opacity: 0; transition: opacity 0.2s;"></div>
                                 </div>
 
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
-                                    <button id="btnRepeat" style="background:none; border:none; color: var(--text-faded); font-size: 18px; cursor: pointer;" onclick="window.toggleRepeat()" title="Repeat Song">🔁 </button>
+                                <div class="controls-wrapper" style="display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
+                                    <button id="btnRepeat" data-tip="Toggle Repeat" style="background:none; border:none; color: var(--text-faded); font-size: 18px; cursor: pointer;" onclick="window.toggleRepeat()">🔁 </button>
                                     
-                                    <div style="display: flex; gap: 12px;">
-                                        <button class="pro-btn btn-listen" style="padding: 12px 22px; border-radius: 30px; font-size: 13px; font-weight: 700;" onclick="window.toggleMusicPlayback()">▶ Play Sync</button>
-                                        <button class="pro-btn btn-dedicate" style="padding: 12px 18px; border-radius: 30px; font-size: 13px;" onclick="window.openDedicationModal()">Add Music</button>
+                                    <div class="action-buttons" style="display: flex; gap: 12px;">
+                                        <button class="pro-btn btn-listen" data-tip="Play/Pause for both" style="padding: 12px 22px; border-radius: 30px; font-size: 13px; font-weight: 700;" onclick="window.toggleMusicPlayback()">▶ Play Sync</button>
+                                        <button class="pro-btn btn-dedicate" data-tip="Dedicate a track" style="padding: 12px 18px; border-radius: 30px; font-size: 13px;" onclick="window.openDedicationModal()">Add Music</button>
                                     </div>
-                                    <button style="background:none; border:none; color: var(--text-faded); font-size: 18px; cursor: pointer;" onclick="window.forceExactSync()" title="Force Sync">🔄</button>
-                                </div></div></div></div>
+                                    <button data-tip="Force Exact Resync" style="background:none; border:none; color: var(--text-faded); font-size: 18px; cursor: pointer;" onclick="window.forceExactSync()">🔄</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="music-history-panel" style="height: 100%; max-height: 650px; background: rgba(255,255,255,0.02); border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); padding: 25px; display: flex; flex-direction: column;">
-                        <h3 style="margin: 0 0 15px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-faded); font-weight: 700;">Recent Dedications</h3>
+                        <h3 data-tip="History Log" style="margin: 0 0 15px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-faded); font-weight: 700;">Recent Dedications</h3>
                         <div id="historyFeedList" class="history-feed" style="flex: 1; overflow-y: auto;"></div>
-                    </div> </div>
+                    </div> 
+                </div>
+
                 <div id="musicModal" class="modal-overlay">
                     <div class="premium-modal" style="width: 90%; max-width: 400px;">
                         <h3 style="margin-top:0; margin-bottom: 20px; color: white;">Add a Song</h3>
                         <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                            <input type="text" id="songSearchQuery" class="premium-input" style="flex: 1;" placeholder="Search for a song...">
-                            <button class="pro-btn" style="padding: 10px 15px; background: rgba(255,42,95,0.15); color: #ff2a5f; border-radius: 14px; box-shadow: none;" onclick="window.searchSongMetadata(this)">🔍 Search</button>
+                            <input type="text" id="songSearchQuery" data-tip="Type song name" class="premium-input" style="flex: 1;" placeholder="Search for a song...">
+                            <button class="pro-btn" data-tip="Search Library" style="padding: 10px 15px; background: rgba(255,42,95,0.15); color: #ff2a5f; border-radius: 14px; box-shadow: none;" onclick="window.searchSongMetadata(this)">🔍 Search</button>
                         </div>
                         <div id="artPreviewContainer" style="display: none; align-items: center; gap: 15px; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; backdrop-filter: blur(10px);">
                             <img id="previewArtImg" src="" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover;">
@@ -786,7 +1264,7 @@ else if (viewName === 'music') {
                                 <input type="text" id="dedicateTitle" class="premium-input" style="background: transparent; border: none; padding: 0; font-size: 14px; font-weight: 700; color: white; margin-bottom: 2px; box-shadow: none;" readonly>
                                 <input type="text" id="dedicateArtist" class="premium-input" style="background: transparent; border: none; padding: 0; font-size: 11px; color: var(--text-faded); box-shadow: none;" readonly>
                             </div>
-                            <button class="pro-btn" style="width: 35px; height: 35px; border-radius: 50%; padding: 0; background: rgba(255,255,255,0.1); display: flex; justify-content: center;" title="Add to Playlist" onclick="window.addToPlaylistOnly()">
+                            <button class="pro-btn" data-tip="Add to queue" style="width: 35px; height: 35px; border-radius: 50%; padding: 0; background: rgba(255,255,255,0.1); display: flex; justify-content: center;" onclick="window.addToPlaylistOnly()">
                                 <span style="font-size: 18px;">➕</span>
                             </button>
                             <input type="hidden" id="hiddenAlbumArtUrl">
@@ -794,11 +1272,11 @@ else if (viewName === 'music') {
                         </div>
                         <div class="input-group">
                             <label style="font-size: 12px; color: var(--text-faded);">Your Message</label>
-                            <input type="text" id="dedicateMessage" class="premium-input" placeholder="Say something sweet...">
+                            <input type="text" id="dedicateMessage" data-tip="Write a sweet note" class="premium-input" placeholder="Say something sweet...">
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 25px;">
-                            <button class="pro-btn btn-dedicate" style="flex: 1; justify-content: center; padding: 12px;" onclick="window.sendDedication()">Send & Play</button>
-                            <button class="pro-btn btn-listen" style="width: 60px; justify-content: center; padding: 12px;" onclick="window.closeDedicationModal()">✕</button>
+                            <button class="pro-btn btn-dedicate" data-tip="Play for both instantly" style="flex: 1; justify-content: center; padding: 12px;" onclick="window.sendDedication()">Send & Play</button>
+                            <button class="pro-btn btn-listen" data-tip="Cancel" style="width: 60px; justify-content: center; padding: 12px;" onclick="window.closeDedicationModal()">✕</button>
                         </div>
                     </div>
                 </div>
@@ -810,8 +1288,8 @@ else if (viewName === 'music') {
                             <p style="margin:0; font-size: 11px; color: var(--text-faded);">Your shared musical journey</p>
                         </div>
                         <div style="display: flex; gap: 10px;">
-                            <button class="pro-btn" style="width: 38px; height: 38px; border-radius: 50%; background: rgba(255,42,95,0.15); color: #ff2a5f; padding: 0;" onclick="window.togglePlaylistContainer(); window.openDedicationModal();">➕</button>
-                            <button class="pro-btn btn-listen" style="width: 38px; height: 38px; border-radius: 50%; justify-content: center; padding: 0;" onclick="window.togglePlaylistContainer()">✕</button>
+                            <button class="pro-btn" data-tip="Add new song" style="width: 38px; height: 38px; border-radius: 50%; background: rgba(255,42,95,0.15); color: #ff2a5f; padding: 0;" onclick="window.togglePlaylistContainer(); window.openDedicationModal();">➕</button>
+                            <button class="pro-btn btn-listen" data-tip="Close Playlist" style="width: 38px; height: 38px; border-radius: 50%; justify-content: center; padding: 0;" onclick="window.togglePlaylistContainer()">✕</button>
                         </div>
                     </div>
                     <div id="playlistItems" class="playlist-scroll-area"></div>
@@ -819,43 +1297,49 @@ else if (viewName === 'music') {
 
                 <style>
                     .morphing-playlist {
-                        position: absolute;
-                        top: 50%;
-                        left: 50%;
-                        transform: translate(-50%, -50%) scale(0);
-                        width: 92%;
-                        max-width: 380px;
-                        height: 75%;
-                        max-height: 520px;
-                        background: rgba(20, 20, 25, 0.95);
-                        backdrop-filter: blur(30px) saturate(180%);
+                        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+                        width: 92%; max-width: 380px; height: 75%; max-height: 520px;
+                        background: rgba(20, 20, 25, 0.95); backdrop-filter: blur(30px) saturate(180%);
                         -webkit-backdrop-filter: blur(30px) saturate(180%);
-                        border: 1px solid rgba(255, 255, 255, 0.3);
-                        border-radius: 32px;
-                        z-index: 3000;
-                        padding: 25px;
-                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-                        opacity: 0;
-                        visibility: hidden;
-                        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-                        pointer-events: none;
+                        border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 32px; z-index: 3000; padding: 25px;
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); opacity: 0; visibility: hidden;
+                        transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none;
                     }
-
-                    .morphing-playlist.active {
-                        opacity: 1;
-                        visibility: visible;
-                        transform: translate(-50%, -50%) scale(1);
-                        pointer-events: all;
-                    }
-
-                    .playlist-scroll-area {
-                        height: calc(100% - 70px);
-                        overflow-y: auto;
-                        padding-right: 5px;
-                    }
-
+                    .morphing-playlist.active { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); pointer-events: all; }
+                    .playlist-scroll-area { height: calc(100% - 70px); overflow-y: auto; padding-right: 5px; }
                     .playlist-scroll-area::-webkit-scrollbar { width: 3px; }
                     .playlist-scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+                    /* --- 📱 MOBILE RESPONSIVENESS ENGINE --- */
+                    @media (max-width: 900px) {
+                        .music-page-grid {
+                            grid-template-columns: 1fr !important; /* Stack vertically */
+                            grid-template-rows: auto 350px; /* Give history panel fixed height when stacked */
+                            gap: 15px !important;
+                            align-items: stretch !important;
+                        }
+                        .main-player-panel {
+                            max-height: none !important;
+                            padding: 20px !important; /* Slightly tighter padding on mobile */
+                        }
+                        .music-history-panel {
+                            max-height: none !important;
+                        }
+                        #vinylDisk {
+                            /* Scale vinyl dynamically on smaller screens */
+                            width: min(200px, 40vw) !important;
+                            height: min(200px, 40vw) !important;
+                            margin-bottom: 20px !important;
+                        }
+                        .controls-wrapper {
+                            padding: 0 !important;
+                        }
+                        /* Ensure buttons wrap beautifully on tiny screens like iPhone SE */
+                        .action-buttons {
+                            flex-wrap: wrap;
+                            justify-content: center;
+                        }
+                    }
                 </style>
             </div>
         `;
@@ -2134,4 +2618,473 @@ window.playPulseAnimation = function(type, senderName, isMissed = false, timesta
         // Remove from DOM after fade completes
         setTimeout(() => overlay.remove(), 1200);
     }, type === 'tap' ? 2500 : 4500); // Hugs last longer (4.5s)
+};
+// ==========================================
+// 🚀 THE ULTIMATE REAL-TIME CHAT ENGINE
+// ==========================================
+// ==========================================
+// 🌍 1. GLOBAL UNREAD & RECEIPT ENGINE
+// ==========================================
+window.activeMsgId = null;
+window.activeMsgText = "";
+window.partnerLastReadTime = 0;
+let typingTimer;
+
+// ==========================================
+// 🌍 GLOBAL UNREAD & RECEIPT ENGINE
+// ==========================================
+window.initGlobalReceiptEngine = function() {
+    if (typeof rtdb === 'undefined' || !currentBridgeId || !currentUsername) return;
+
+    const msgsRef = ref(rtdb, `bridges/${currentBridgeId}/messages`);
+    const myReadRef = ref(rtdb, `bridges/${currentBridgeId}/readReceipts/${currentUsername}`);
+    const partnerReadRef = ref(rtdb, `bridges/${currentBridgeId}/readReceipts/${partnerUsername}`);
+
+    // Listen to when she last read the chat
+    onValue(partnerReadRef, (snap) => {
+        window.partnerLastReadTime = snap.val() || 0;
+        // Refresh feed if we are currently looking at it
+        if (typeof window.refreshReadReceipts === 'function' && window.currentView === 'messages') {
+            window.refreshReadReceipts();
+        }
+    });
+
+    // Calculate Unread Badge in real-time
+    onValue(myReadRef, (readSnap) => {
+        const myLastRead = readSnap.val() || 0;
+
+        onValue(msgsRef, (msgSnap) => {
+            if (!msgSnap.exists()) return;
+            let unreadCount = 0;
+            
+            msgSnap.forEach(child => {
+                const msg = child.val();
+                if (msg.sender !== currentUsername && msg.timestamp > myLastRead) {
+                    unreadCount++;
+                }
+            });
+
+            // Update Sidebar Badge (Make sure you have an element with id="messagesNavBadge" in your sidebar)
+            const badge = document.getElementById('messagesNavBadge');
+            if (badge) {
+                if (unreadCount > 0 && window.currentView !== 'messages') {
+                    badge.style.display = 'inline-block';
+                    badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        });
+    });
+};
+
+// --- ⌚ INSTAGRAM TIME FORMATTER ---
+window.getInstagramSeenText = function(readAtTime) {
+    if (!readAtTime) return "";
+    const diff = Date.now() - readAtTime;
+    const mins = Math.floor(diff / 60000);
+    
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    
+    const days = Math.floor(hrs / 24);
+    if (days === 1) return "yesterday";
+    
+    return `${days}d ago`;
+};
+
+// Execute global engine immediately
+// window.initGlobalReceiptEngine(); // <-- Call this when Firebase initializes
+
+// ==========================================
+// 🚀 THE LOCAL CHAT ENGINE (SYNCSPACE)
+// ==========================================
+window.initChatEngine = function() {
+    if (typeof rtdb === 'undefined' || !currentBridgeId || !currentUsername) return;
+
+    const messagesRef = ref(rtdb, `bridges/${currentBridgeId}/messages`);
+    const partnerTypingRef = ref(rtdb, `bridges/${currentBridgeId}/typing/${partnerUsername}`);
+
+    // --- REAL-TIME MESSAGE LISTENER & STAMPER ---
+    onValue(messagesRef, (snapshot) => {
+        const chatFeed = document.getElementById('chatFeed');
+        
+        // ⚡ CRITICAL FIX: If the chat feed isn't on screen, stop processing UI updates
+        if (!chatFeed) return;
+        
+        chatFeed.innerHTML = ""; 
+        
+        // We are looking at the chat, so update our global read receipt
+        set(ref(rtdb, `bridges/${currentBridgeId}/readReceipts/${currentUsername}`), Date.now());
+
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            const sortedMsgs = Object.entries(data).sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+            const updates = {};
+            let hasUnread = false;
+
+            // ⚡ INSTAGRAM ENGINE: Instantly stamp unstamped messages
+            sortedMsgs.forEach(([msgId, msg]) => {
+                if (msg.sender !== currentUsername && !msg.readAt) {
+                    const now = Date.now();
+                    updates[`${msgId}/readAt`] = now;
+                    msg.readAt = now; // Optimistic local update so UI paints instantly
+                    hasUnread = true;
+                }
+            });
+
+            // Send stamps back to Firebase silently
+            if (hasUnread) {
+                update(messagesRef, updates).catch(err => console.error("Receipt error:", err));
+            }
+
+            // ⚡ FIND THE LAST MESSAGE SENT BY ME
+            let myLastMsgIndex = -1;
+            for (let i = sortedMsgs.length - 1; i >= 0; i--) {
+                if (sortedMsgs[i][1].sender === currentUsername) {
+                    myLastMsgIndex = i;
+                    break;
+                }
+            }
+
+            // Render the UI
+            sortedMsgs.forEach(([msgId, msg], index) => {
+                const isMe = msg.sender === currentUsername;
+                const isMyLastMessage = (index === myLastMsgIndex); 
+                renderMessage(msgId, msg, isMe, isMyLastMessage);
+            });
+            
+            chatFeed.scrollTo({ top: chatFeed.scrollHeight, behavior: 'smooth' });
+        }
+    });
+
+    // --- REAL-TIME TYPING INDICATOR ---
+    onValue(partnerTypingRef, (snapshot) => {
+        const indicator = document.getElementById('typingIndicatorRow');
+        const headerStatus = document.getElementById('headerTypingStatus');
+        const onlineStatus = document.getElementById('headerOnlineStatus');
+        
+        const isTyping = snapshot.val() === true;
+        if (indicator) indicator.style.display = isTyping ? 'flex' : 'none';
+        if (headerStatus) headerStatus.style.display = isTyping ? 'flex' : 'none';
+        if (onlineStatus) onlineStatus.style.display = isTyping ? 'none' : 'flex';
+    });
+};
+
+window.refreshReadReceipts = function() {
+    const chatFeed = document.getElementById('chatFeed');
+    if (!chatFeed) return;
+    const messagesRef = ref(rtdb, `bridges/${currentBridgeId}/messages`);
+    get(messagesRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            chatFeed.innerHTML = "";
+            const sortedMsgs = Object.entries(snapshot.val()).sort((a, b) => a[1].timestamp - b[1].timestamp);
+            
+            // ⚡ FIND THE LAST MESSAGE SENT BY ME (For refresh)
+            let myLastMsgIndex = -1;
+            for (let i = sortedMsgs.length - 1; i >= 0; i--) {
+                if (sortedMsgs[i][1].sender === currentUsername) {
+                    myLastMsgIndex = i;
+                    break;
+                }
+            }
+
+            sortedMsgs.forEach(([msgId, msg], index) => {
+                const isMe = msg.sender === currentUsername;
+                const isMyLastMessage = (index === myLastMsgIndex);
+                renderMessage(msgId, msg, isMe, isMyLastMessage);
+            });
+            chatFeed.scrollTo({ top: chatFeed.scrollHeight, behavior: 'smooth' });
+        }
+    });
+};
+
+// --- TYPING BROADCASTER ---
+window.handleTypingSignal = function() {
+    const input = document.getElementById('chatInputMessage');
+    if (!input) return;
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+
+    if (typeof rtdb !== 'undefined' && currentBridgeId && currentUsername) {
+        set(ref(rtdb, `bridges/${currentBridgeId}/typing/${currentUsername}`), true);
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+            set(ref(rtdb, `bridges/${currentBridgeId}/typing/${currentUsername}`), false);
+        }, 2000);
+    }
+};
+
+// --- SEND MESSAGE FUNCTION ---
+window.sendTextMessage = async function() {
+    const input = document.getElementById('chatInputMessage');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const messagesRef = ref(rtdb, `bridges/${currentBridgeId}/messages`);
+    const newMsgRef = push(messagesRef);
+
+    try {
+        await set(newMsgRef, {
+            text: text,
+            sender: currentUsername,
+            timestamp: Date.now(),
+            edited: false
+        });
+        
+        input.value = "";
+        input.style.height = 'auto';
+        set(ref(rtdb, `bridges/${currentBridgeId}/typing/${currentUsername}`), false);
+        set(ref(rtdb, `bridges/${currentBridgeId}/readReceipts/${currentUsername}`), Date.now()); 
+        
+        if (navigator.vibrate) navigator.vibrate(10);
+    } catch (e) {
+        console.error("Send failed:", e);
+    }
+};
+// --- 4. THE UI RENDERER (Now handles Images, Videos, and Voice Notes) ---
+function renderMessage(msgId, msg, isMe, isMyLastMessage) {
+    const chatFeed = document.getElementById('chatFeed');
+    const row = document.createElement('div');
+    row.className = `message-row ${isMe ? 'sent' : 'received'} animate-in`;
+    
+    const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let statusTextHTML = "";
+
+    if (isMe && isMyLastMessage) {
+        if (msg.readAt) {
+            const readDiffStr = window.getInstagramSeenText(msg.readAt);
+            statusTextHTML = `<span style="margin-left: 6px; padding-left: 6px; border-left: 1px solid rgba(255,255,255,0.2); color: #32d74b; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; font-size: 9px;">Read ${readDiffStr}</span>`;
+        } else {
+            statusTextHTML = `<span style="margin-left: 6px; padding-left: 6px; border-left: 1px solid rgba(255,255,255,0.2); color: rgba(255, 255, 255, 0.6); font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; font-size: 9px;">Delivered</span>`;
+        }
+    }
+    
+    // ⚡ MEDIA PARSER: Build the HTML for the media if it exists
+    let mediaHTML = "";
+    if (msg.mediaUrl) {
+        if (msg.mediaType === 'image') {
+            mediaHTML = `<img src="${msg.mediaUrl}" style="max-width: 100%; border-radius: 14px; margin-bottom: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer;" onclick="window.open(this.src, '_blank')">`;
+        } else if (msg.mediaType === 'video') {
+            mediaHTML = `<video src="${msg.mediaUrl}" controls style="max-width: 100%; border-radius: 14px; margin-bottom: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);"></video>`;
+        } else if (msg.mediaType === 'audio') {
+            // Sleek custom glass styling for the native audio player
+            mediaHTML = `<audio src="${msg.mediaUrl}" controls style="max-width: 100%; height: 35px; border-radius: 20px; outline: none; margin-bottom: 8px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3)) ${isMe ? 'invert(1)' : ''};"></audio>`;
+        }
+    }
+
+    // Wrap text nicely if it exists alongside media
+    let textHTML = msg.text ? `<span>${msg.text.replace(/`/g, '\\`').replace(/\${/g, '\\${')}</span>` : "";
+    
+    row.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'}; max-width: 100%;">
+            <div class="bubble ${isMe ? 'sent' : 'received'}" 
+                 onclick="window.openMessageMenu('${msgId}', \`${msg.text ? msg.text.replace(/`/g, '\\`').replace(/\${/g, '\\${') : ''}\`, ${isMe}, ${msg.timestamp})">
+                
+                ${mediaHTML}
+                ${textHTML}
+                
+                ${msg.edited ? '<span style="font-size:10px; opacity:0.6; margin-left:6px; font-style:italic;">(edited)</span>' : ''}
+                
+                <div class="msg-time" style="display: flex; align-items: center; justify-content: ${isMe ? 'flex-end' : 'flex-start'}; margin-top: 6px;">
+                    ${time} ${statusTextHTML}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    chatFeed.appendChild(row);
+}
+// --- 3D MENU INTERACTIONS ---
+window.openMessageMenu = function(msgId, text, isSentByMe, timestamp) {
+    if (navigator.vibrate) navigator.vibrate([20, 40]); 
+    
+    window.activeMsgId = msgId;
+    window.activeMsgText = text;
+    
+    const overlay = document.getElementById('hapticMenuOverlay');
+    const authorActions = document.getElementById('authorActions');
+    const editBtn = document.getElementById('editBtn');
+
+    if (isSentByMe) {
+        authorActions.style.display = 'block';
+        const fifteenMins = 900000;
+        const isEditable = (Date.now() - timestamp) < fifteenMins;
+        editBtn.style.display = isEditable ? 'flex' : 'none';
+    } else {
+        authorActions.style.display = 'none';
+    }
+    overlay.classList.add('active');
+};
+
+window.closeMessageMenu = function() {
+    const overlay = document.getElementById('hapticMenuOverlay');
+    if (overlay) overlay.classList.remove('active');
+};
+
+window.copySelectedMsg = function() {
+    navigator.clipboard.writeText(window.activeMsgText);
+    window.closeMessageMenu();
+};
+
+window.unsendSelectedMsg = async function() {
+    if (!window.activeMsgId) return;
+    const msgRef = ref(rtdb, `bridges/${currentBridgeId}/messages/${window.activeMsgId}`);
+    await remove(msgRef);
+    window.closeMessageMenu();
+};
+
+window.editSelectedMsg = function() {
+    const input = document.getElementById('chatInputMessage');
+    input.value = window.activeMsgText;
+    input.focus();
+    
+    const sendBtn = document.querySelector('.send-core-btn');
+    const originalOnClick = sendBtn.getAttribute('onclick');
+    
+    sendBtn.innerHTML = `✅`;
+    const editId = window.activeMsgId; 
+    
+    sendBtn.onclick = async () => {
+        const updatedText = input.value.trim();
+        if (updatedText && updatedText !== window.activeMsgText) {
+            const msgRef = ref(rtdb, `bridges/${currentBridgeId}/messages/${editId}`);
+            await update(msgRef, { text: updatedText, edited: true });
+        }
+        input.value = "";
+        sendBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`;
+        sendBtn.setAttribute('onclick', originalOnClick);
+    };
+    window.closeMessageMenu();
+};
+// ==========================================
+// 🎙️ THE MEDIA & VOICE UPLOAD ENGINE
+// ==========================================
+
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+
+window.handleMediaSelection = async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Determine type
+    let mediaType = 'image';
+    if (file.type.startsWith('video/')) mediaType = 'video';
+
+    await window.uploadMediaToFirebase(file, mediaType);
+    event.target.value = ""; // Reset input
+};
+
+window.uploadMediaToFirebase = async function(file, mediaType) {
+    if (typeof window.storage === 'undefined' || typeof window.sRef === 'undefined') {
+        alert("Firebase Storage is not initialized!");
+        return;
+    }
+
+    const progressContainer = document.getElementById('mediaUploadProgress');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const progressText = document.getElementById('uploadProgressText');
+    
+    progressContainer.style.display = 'flex';
+
+    // Create a unique file name
+    const uniqueName = `${Date.now()}_${file.name || 'voicenote.webm'}`;
+    const storageReference = window.sRef(window.storage, `bridges/${currentBridgeId}/media/${uniqueName}`);
+
+    const uploadTask = window.uploadBytesResumable(storageReference, file);
+
+    uploadTask.on('state_changed', 
+        (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            progressBar.style.width = progress + '%';
+            progressText.innerText = Math.round(progress) + '%';
+        }, 
+        (error) => {
+            console.error("Upload failed:", error);
+            progressContainer.style.display = 'none';
+            alert("Failed to upload media.");
+        }, 
+        async () => {
+            // Upload completed successfully, now get the download URL
+            const downloadURL = await window.getDownloadURL(uploadTask.snapshot.ref);
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+            
+            // Push to Realtime Database
+            const messagesRef = ref(rtdb, `bridges/${currentBridgeId}/messages`);
+            await push(messagesRef, {
+                text: "", // Optional text attached to media
+                mediaUrl: downloadURL,
+                mediaType: mediaType,
+                sender: currentUsername,
+                timestamp: Date.now(),
+                edited: false
+            });
+            
+            if (navigator.vibrate) navigator.vibrate([10, 20]);
+        }
+    );
+};
+
+// --- VOICE RECORDER CONTROLS ---
+window.startVoiceRecord = async function() {
+    if (isRecording) return;
+    
+    const btn = document.getElementById('voiceRecordBtn');
+    
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // standard web audio format
+            if (audioBlob.size > 500) { // Make sure it's not an empty click
+                await window.uploadMediaToFirebase(audioBlob, 'audio');
+            }
+            
+            // Stop all microphone tracks to turn off the red browser light
+            stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        
+        // 🎨 UI: Make the mic button pulse red and scale up
+        btn.style.background = 'rgba(255, 42, 95, 0.2)';
+        btn.style.color = '#ff2a5f';
+        btn.style.transform = 'scale(1.2)';
+        btn.style.boxShadow = '0 0 15px rgba(255, 42, 95, 0.5)';
+        if (navigator.vibrate) navigator.vibrate(20);
+
+    } catch (err) {
+        console.error("Microphone access denied:", err);
+        alert("Please allow microphone access to send voice notes.");
+    }
+};
+
+window.stopVoiceRecord = function() {
+    if (!isRecording || !mediaRecorder) return;
+    
+    const btn = document.getElementById('voiceRecordBtn');
+    
+    mediaRecorder.stop();
+    isRecording = false;
+    
+    // 🎨 UI: Return mic to original blue state
+    btn.style.background = 'rgba(10, 132, 255, 0.15)';
+    btn.style.color = '#0a84ff';
+    btn.style.transform = 'scale(1)';
+    btn.style.boxShadow = 'none';
+    if (navigator.vibrate) navigator.vibrate(10);
 };

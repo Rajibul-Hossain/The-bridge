@@ -1128,3 +1128,23 @@
     0% { opacity: 0; filter: blur(5px); transform: translateY(10px) scale(0.9); letter-spacing: -1px; }
     100% { opacity: 1; filter: blur(0px); transform: translateY(0) scale(1); letter-spacing: 0.5px; }
 }
+/* ⚡ FLAGSHIP SIDEBAR BADGE */
+.nav-badge {
+    background: #ff2a5f;
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    font-family: 'Poppins', sans-serif;
+    padding: 2px 6px;
+    border-radius: 12px;
+    margin-left: auto;
+    box-shadow: 0 0 10px rgba(255, 42, 95, 0.6);
+    animation: pulseBadge 2s infinite;
+    display: none; /* Hidden by default */
+}
+
+@keyframes pulseBadge {
+    0% { box-shadow: 0 0 0 0 rgba(255, 42, 95, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(255, 42, 95, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 42, 95, 0); }
+}
