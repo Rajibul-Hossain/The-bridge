@@ -72,7 +72,7 @@ async function fetchAllUsers() {
                 let isClaimed = userData.partnerUid ? true : false;
                 
                 let btnHTML = isClaimed 
-                    ? `<button class="connect-btn pending" disabled>Bridged</button>`
+                    ? `<button class="connect-btn pending" disabled>Already Connected</button>`
                     : `<button class="connect-btn" onclick="sendBridgeRequest('${userId}', '${userData.username}')">Send Request</button>`;
 
                 directoryBox.innerHTML += `
@@ -193,9 +193,21 @@ window.declineRequest = async function(requestId) {
     await deleteDoc(doc(db, "requests", requestId));
 }
 
-window.executeLogout = function() {
-    signOut(auth).then(() => {
+window.executeLogout = async function() {
+    try {
+        await signOut(auth);
+
+        // 2. Clear user session data
         localStorage.removeItem("activeBridgeUser");
-        window.location.href = './index.html';
-    });
-}
+        console.log("Session cleared.");
+
+        window.location.assign('/index.html'); 
+
+    } catch (error) {
+        // 4. Catch and expose the silent failure
+        console.error("Logout Authentication Error:", error.code, error.message);
+        
+        // Optional: Provide UI feedback to the user
+        alert("We encountered an issue logging you out. Check the console for details.");
+    }
+};

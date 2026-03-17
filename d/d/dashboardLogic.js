@@ -2,28 +2,23 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { initInteractionListener } from './interxn.js';
 import { getFirestore, doc, getDoc, updateDoc, onSnapshot as firestoreSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { getDatabase, ref, onValue, set, get, push, onDisconnect, serverTimestamp as rtdbTime, update, remove} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getDatabase, ref, onValue, set, get, push, onDisconnect, serverTimestamp as rtdbTime, update, remove, onChildAdded} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+
 const firebaseConfig = {
     apiKey: "AIzaSyDEbvPzoahjdt0w5s2SF7Usn3ZnOxF2v38",
     authDomain: "ever-us.firebaseapp.com",
     databaseURL: "https://ever-us-default-rtdb.firebaseio.com", 
-    projectId: "ever-us",
-    storageBucket: "ever-us.firebasestorage.app",
+    projectId: "ever-us", storageBucket: "ever-us.firebasestorage.app",
     messagingSenderId: "925623567345",
     appId: "1:925623567345:web:10c9d1e5873a4df7983a50",
     measurementId: "G-6E4K45TWLV"};
-    import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
-
-// Initialize Storage
-
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const rtdb = getDatabase(app); 
 export const storage = getStorage(app);
 Quill.register('modules/cursors', QuillCursors);
-// (Make sure to export sRef, uploadBytesResumable, and getDownloadURL globally or import them here)
 window.storage = storage;
 window.sRef = sRef;
 window.uploadBytesResumable = uploadBytesResumable;
@@ -40,21 +35,15 @@ let partnerLocation = { city: "Tracking...", temp: "--", lat: 0, lon: 0 };
 let timelineEvents = [];
 import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 setPersistence(auth, browserLocalPersistence)
-    .then(() => {
-        initAuthListener();
-    })
-    .catch((error) => {
-        console.error("Persistence Error:", error);
-    });
+    .then(() => {initAuthListener();})
+    .catch((error) => {console.error("Persistence Error:", error);});
 
 function initAuthListener() {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
-            try {
-                const userRef = doc(db, "users", user.uid);
+            try {const userRef = doc(db, "users", user.uid);
                 const myDoc = await getDoc(userRef);
-
                 if (myDoc.exists()) {
                     const userData = myDoc.data();
                     currentUsername = userData.username;
@@ -67,11 +56,10 @@ function initAuthListener() {
                     }
                     const partnerDoc = await getDoc(doc(db, "users", partnerUid));
                     if (partnerDoc.exists()) {
-                        partnerUsername = partnerDoc.data().username;
-                    }
-
+                        partnerUsername = partnerDoc.data().username;}
                     activateGlobalUpdateListener();
                     initGlobalReceiptEngine();
+                    window.initCallEngine();
                     activatePresenceEngine();
                     activateLiveCanvas();
                     activateTelemetry();
@@ -272,27 +260,18 @@ function activateLiveCanvas() {
             
             // Move the partner's flag on your screen
             cursorModule.moveCursor(partnerUid, range);
-            
-            // Force the Name Flag to pop up
             cursorModule.toggleFlag(partnerUid, true);
-            
-            // Fade the name flag after 2 seconds of them not moving
             clearTimeout(window.textCursorFlagTimer);
             window.textCursorFlagTimer = setTimeout(() => {
-                if (cursorModule) cursorModule.toggleFlag(partnerUid, false);
-            }, 2000);
-
-        } else if (cursorModule) {
-            // Remove cursor if they leave the tab
-            cursorModule.removeCursor(partnerUid);
-        }
-    });
+                if (cursorModule) cursorModule.toggleFlag(partnerUid, false);}, 2000);
+} else if (cursorModule) {
+            cursorModule.removeCursor(partnerUid);}});
 }
 
 window.initQuillEditor = function() {
     sharedEditor = new Quill('#editorCore', {
         theme: 'snow',
-        placeholder: `A shared Workspace notepad... Type Anything you want and make it visible automatically`,
+        placeholder: `A shared workspace notepad... Type anything you want and make it visible automatically`,
         modules: {
             cursors: true, 
             toolbar: [
@@ -313,17 +292,10 @@ window.initQuillEditor = function() {
         if (snap.exists() && snap.val().content) {
             isProgrammaticUpdate = true; 
             sharedEditor.setContents(snap.val().content, 'silent'); 
-            isProgrammaticUpdate = false;
-        }
-    });
-
+            isProgrammaticUpdate = false;}});
     sharedEditor.on('selection-change', function(range, oldRange, source) {
         if (source === 'user' && range) {
-            set(ref(rtdb, `bridges/${currentBridgeId}/textCursors/${currentUser.uid}`), range);
-        }
-    });
-
-// ==========================================
+            set(ref(rtdb, `bridges/${currentBridgeId}/textCursors/${currentUser.uid}`), range);}});
     // BROADCAST MY TEXT EDITS (Sync & Versioning)
     // ==========================================
     sharedEditor.on('text-change', function(delta, oldDelta, source) {
@@ -332,31 +304,21 @@ window.initQuillEditor = function() {
             // 1. UI Update: Set local status to "Saving"
             const statusEl = document.getElementById('notepadStatus');
             if (statusEl) statusEl.innerText = "Saving...";
-
-            // 2. Presence: Broadcast "Typing..." status to Partner
             set(ref(rtdb, `bridges/${currentBridgeId}/canvasData/typing`), currentUsername);
-            
-            // 3. Presence: Clear typing status after 1.5s of silence
             clearTimeout(typingIndicatorTimer);
             typingIndicatorTimer = setTimeout(() => {
                 set(ref(rtdb, `bridges/${currentBridgeId}/canvasData/typing`), "");
             }, 1500);
-
-            // 4. Persistence: Debounce the heavy rich-text save (1 second threshold)
             clearTimeout(typingTimer);
             typingTimer = setTimeout(() => {
                 const fullContent = sharedEditor.getContents(); 
-                const timestamp = rtdbTime(); // Get the high-precision server time
-
-                // Update the Main Sync Node
+                const timestamp = rtdbTime(); 
                 set(ref(rtdb, `bridges/${currentBridgeId}/canvasData`), {
                     content: fullContent, 
                     lastEditor: currentUsername, 
-                    lastEditTime: timestamp, // CRITICAL for unread detection
+                    lastEditTime: timestamp, 
                     typing: ""
                 });
-
-                // Update my local "Last Read" so I don't notify myself of my own edit
                 localStorage.setItem(`lastRead_${currentBridgeId}`, Date.now());
                 
                 // Log to the Activity Timeline
@@ -580,7 +542,7 @@ if (viewName === 'overview') {
 </button>
 
 <button data-tip="Send a Hug" class="pro-btn" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,42,95,0.1); border: 1px solid rgba(255,42,95,0.2); padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer;" onclick="window.triggerPulse('hug')">
-    <span style="font-size: 18px;">🫂</span>
+    <span style="font-size: 18px;">👻</span>
 </button>
                 </div>
 
@@ -728,6 +690,8 @@ if (viewName === 'messages') {
         // 1. Initialize State
         window.activeMsgId = null;
         window.activeMsgText = "";
+        window.activeMsgSender = ""; // Track who we are replying to
+        window.activeReplyData = null; // Store reply context
 
         box.innerHTML = `
             <style>
@@ -849,7 +813,7 @@ if (viewName === 'messages') {
     overflow-y: auto;
     
     /* Adjusted padding to sit perfectly inside the new glass pane */
-    padding: 100px 20px 100px 20px; 
+    padding: 100px 20px 140px 20px; 
     
     /* Give it breathing room from the actual screen edges so the radius makes sense */
     margin: 8px 12px; 
@@ -932,22 +896,17 @@ if (viewName === 'messages') {
 .sent .msg-time { text-align: right; color: rgba(255,255,255,0.8); }
 
 .input-godtier {
-    position: absolute; 
-    bottom: 24px; 
-    left: 20px; 
-    right: 20px;
     background: rgba(20, 20, 26, 0.75); 
     backdrop-filter: blur(40px) saturate(200%);
     -webkit-backdrop-filter: blur(40px) saturate(200%);
     border-radius: 40px; 
-    padding: 10px 10px 10px 24px;
+    padding: 10px 10px 10px 15px;
     display: flex; 
     align-items: flex-end; 
-    gap: 12px; 
+    gap: 10px; 
     z-index: 100;
     border: var(--glass-border);
     box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6);
-    animation: riseUp3D 0.9s var(--spring-intense) forwards;
     transition: all 0.3s var(--spring-smooth);
 }
 .input-godtier:focus-within {
@@ -1075,7 +1034,7 @@ if (viewName === 'messages') {
 <div class="chat-wrapper">
                 <div class="chat-header-godtier">
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <div class="avatar-godtier">🫂</div>
+                        <div class="avatar-godtier">👻</div>
                         <div class="header-text-group">
                             <h2 class="chat-title-pro">${partnerUsername}</h2>
                             <p class="chat-status-typing" id="headerTypingStatus" style="display: none;">
@@ -1084,38 +1043,67 @@ if (viewName === 'messages') {
                             <p class="chat-status-typing" id="headerOnlineStatus" style="color: #32d74b;">Connected</p>
                         </div>
                     </div>
-                    <button class="icon-btn-pro" data-tip="Start Audio Call" style="background:transparent; color:white;">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                    </button>
+
+<div style="display: flex; gap: 10px;">
+        <button class="icon-btn-pro" data-tip="Clear Chat for Me" style="background:transparent; color:#ff3b30;" onclick="window.clearMyChat()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+
+        <button class="icon-btn-pro" data-tip="Call History" style="background:transparent; color:white; position: relative;" onclick="window.openCallHistory()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span id="missedCallBadge" style="display:none; position: absolute; top: -5px; right: -5px; background: #ff3b30; color: white; font-size: 10px; font-weight: 800; width: 16px; height: 16px; border-radius: 50%; justify-content: center; align-items: center; box-shadow: 0 0 10px rgba(255,59,48,0.5); font-family: 'Poppins', sans-serif;">0</span>
+        </button>
+        <button class="icon-btn-pro" data-tip="Start Audio Call" style="background:transparent; color:white;" onclick="window.startAudioCall()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+        </button>
+    </div>
                 </div>
 
                 <div class="chat-feed" id="chatFeed"></div>
 
-                <div id="mediaUploadProgress" style="position: absolute; bottom: 85px; left: 20px; right: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border-radius: 10px; padding: 8px 15px; display: none; align-items: center; gap: 10px; z-index: 90; border: 1px solid rgba(255,255,255,0.1);">
+                <div id="mediaUploadProgress" style="position: absolute; bottom: 120px; left: 20px; right: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border-radius: 10px; padding: 8px 15px; display: none; align-items: center; gap: 10px; z-index: 90; border: 1px solid rgba(255,255,255,0.1);">
                     <div style="flex: 1; height: 4px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden;">
                         <div id="uploadProgressBar" style="width: 0%; height: 100%; background: #32d74b; transition: width 0.2s;"></div>
                     </div>
                     <span id="uploadProgressText" style="color: white; font-size: 10px; font-weight: 700;">0%</span>
                 </div>
 
-                <div class="input-godtier">
-                    <button data-tip="Attach Media" class="icon-btn-pro" onclick="document.getElementById('mediaUploader').click()">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                    </button>
-                    
-                    <textarea id="chatInputMessage" class="chat-textarea" placeholder="iMessage..." rows="1" oninput="window.handleTypingSignal()"></textarea>
-                    
-                    <button id="voiceRecordBtn" data-tip="Hold to Record" class="icon-btn-pro" style="background: rgba(10, 132, 255, 0.15); color: #0a84ff; transition: all 0.2s ease;" onmousedown="window.startVoiceRecord()" onmouseup="window.stopVoiceRecord()" ontouchstart="window.startVoiceRecord()" ontouchend="window.stopVoiceRecord()">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                    </button>
+                <div id="emojiPickerBay" style="display: none; position: absolute; bottom: 85px; left: 20px; background: rgba(20,20,25,0.95); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 15px; z-index: 100; box-shadow: 0 15px 30px rgba(0,0,0,0.6); grid-template-columns: repeat(6, 1fr); gap: 8px;">
+                    </div>
 
-                    <button data-tip="Send Message" class="send-core-btn" onclick="window.sendTextMessage()">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                    </button>
+                <div style="position: absolute; bottom: 24px; left: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; animation: riseUp3D 0.9s var(--spring-intense) forwards;">
+                    <div id="replyPreviewBox" style="display: none; background: rgba(255,255,255,0.05); border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); align-items: center; justify-content: space-between; backdrop-filter: blur(10px);">
+                        <div style="flex: 1; overflow: hidden; border-left: 3px solid #ff2a5f; padding-left: 10px;">
+                            <span id="replyPreviewName" style="color: #ff2a5f; font-size: 11px; font-weight: 800; text-transform: uppercase;"></span>
+                            <p id="replyPreviewText" style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 2px 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></p>
+                        </div>
+                        <button class="icon-btn-pro" style="width: 25px; height: 25px; background: rgba(255,255,255,0.1);" onclick="window.cancelReply()">✕</button>
+                    </div>
+
+                    <div class="input-godtier" style="position: relative; bottom: 0; left: 0; right: 0; animation: none;">
+                        <button class="icon-btn-pro" data-tip="Emojis" onclick="window.toggleEmojiBay()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                        </button>
+
+                        <button data-tip="Attach Media" class="icon-btn-pro" onclick="document.getElementById('mediaUploader').click()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                        </button>
+                        
+                        <textarea id="chatInputMessage" class="chat-textarea" placeholder="iMessage..." rows="1" oninput="window.handleTypingSignal()"></textarea>
+                        
+                        <button id="voiceRecordBtn" data-tip="Hold to Record" class="icon-btn-pro" style="background: rgba(10, 132, 255, 0.15); color: #0a84ff; transition: all 0.2s ease;" onmousedown="window.startVoiceRecord()" onmouseup="window.stopVoiceRecord()" ontouchstart="window.startVoiceRecord()" ontouchend="window.stopVoiceRecord()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                        </button>
+
+                        <button data-tip="Send Message" class="send-core-btn" onclick="window.sendTextMessage()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div id="hapticMenuOverlay" class="haptic-overlay-pro" onclick="window.closeMessageMenu()">
                     <div class="menu-3d" onclick="event.stopPropagation()">
+                        <button class="haptic-btn-pro" onclick="window.initiateReply()">Reply to Message</button>
                         <button class="haptic-btn-pro" onclick="window.copySelectedMsg()">Copy Text</button>
                         <div id="authorActions" style="display: none;">
                             <button class="haptic-btn-pro" id="editBtn" onclick="window.editSelectedMsg()">Edit Message</button>
@@ -1129,10 +1117,12 @@ if (viewName === 'messages') {
         `;
 
         // --- ⚡ DYNAMIC MENU FUNCTIONS ---
-        window.openMessageMenu = function(msgId, text, isSentByMe, timestamp) {
+        // Enhanced to capture who sent the message for the reply UI
+        window.openMessageMenu = function(msgId, text, isSentByMe, timestamp, senderName) {
             if (navigator.vibrate) navigator.vibrate([20, 40]); 
             window.activeMsgId = msgId;
             window.activeMsgText = text;
+            window.activeMsgSender = senderName || (isSentByMe ? 'You' : partnerUsername);
             
             const overlay = document.getElementById('hapticMenuOverlay');
             const authorActions = document.getElementById('authorActions');
@@ -1185,6 +1175,86 @@ if (viewName === 'messages') {
             window.closeMessageMenu();
         };
 
+        // --- 🗑️ CLEAR CHAT LOGIC ---
+        window.clearMyChat = async function() {
+            if (confirm("Clear all messages? This deletes them on your screen only.")) {
+                await set(ref(rtdb, `bridges/${currentBridgeId}/clearedAt/${currentUsername}`), Date.now());
+                if (navigator.vibrate) navigator.vibrate([20, 30]);
+                // Clear UI immediately without waiting for database reflection
+                const chatFeed = document.getElementById('chatFeed');
+                if(chatFeed) chatFeed.innerHTML = "";
+            }
+        };
+
+        // --- 😀 EMOJI BAY LOGIC ---
+        window.toggleEmojiBay = function() {
+            const bay = document.getElementById('emojiPickerBay');
+            if (bay.style.display === 'grid') {
+                bay.style.display = 'none';
+                return;
+            }
+            
+            if (bay.innerHTML.trim() === '') {
+                const emojis = ['😂','❤️','😍','🥺','🔥','✨','👻','💀','👀','🙏','😊','😭','🥰','😘','👍','🙌','😎','🥳','🥹','💯','🤍','🫶','💕','✨'];
+                emojis.forEach(emoji => {
+                    const btn = document.createElement('button');
+                    btn.innerHTML = emoji;
+                    btn.style.cssText = "background:transparent; border:none; font-size: 24px; cursor:pointer; padding:5px; transition: transform 0.2s;";
+                    btn.onmouseover = () => btn.style.transform = "scale(1.2)";
+                    btn.onmouseout = () => btn.style.transform = "scale(1)";
+                    btn.onclick = () => {
+                        const input = document.getElementById('chatInputMessage');
+                        input.value += emoji;
+                        bay.style.display = 'none';
+                        input.focus();
+                    };
+                    bay.appendChild(btn);
+                });
+            }
+            bay.style.display = 'grid';
+        };
+
+        // --- ↩️ REPLY LOGIC ---
+        window.initiateReply = function() {
+            window.activeReplyData = {
+                id: window.activeMsgId,
+                text: window.activeMsgText || "Media Attachment",
+                sender: window.activeMsgSender
+            };
+            
+            document.getElementById('replyPreviewName').innerText = `Replying to ${window.activeReplyData.sender}`;
+            document.getElementById('replyPreviewText').innerText = window.activeReplyData.text;
+            document.getElementById('replyPreviewBox').style.display = 'flex';
+            
+            // Re-round the top corners of the input bar to connect visually with the reply box
+            document.querySelector('.input-godtier').style.borderTopLeftRadius = '0';
+            document.querySelector('.input-godtier').style.borderTopRightRadius = '0';
+            
+            document.getElementById('chatInputMessage').focus();
+            window.closeMessageMenu();
+        };
+
+        window.cancelReply = function() {
+            window.activeReplyData = null;
+            document.getElementById('replyPreviewBox').style.display = 'none';
+            document.querySelector('.input-godtier').style.borderTopLeftRadius = '40px';
+            document.querySelector('.input-godtier').style.borderTopRightRadius = '40px';
+        };
+
+        // --- ✉️ ENTER-TO-SEND LISTENER ---
+        // Set timeout ensures the DOM has fully painted before we attach the listener
+        setTimeout(() => {
+            const chatInput = document.getElementById('chatInputMessage');
+            if(chatInput) {
+                chatInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault(); // Prevents line break
+                        window.sendTextMessage(); // Ensure your sendTextMessage in dashboardLogic handles window.activeReplyData!
+                    }
+                });
+            }
+        }, 100);
+
         if (typeof window.initChatEngine === 'function') window.initChatEngine();
     }else if (viewName === 'music') {
         box.innerHTML = `
@@ -1228,7 +1298,7 @@ if (viewName === 'messages') {
                                 </div>
                                 
                                 <div id="progressBarContainer" data-tip="Scrub Timeline" style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; cursor: pointer; position: relative; margin-bottom: 25px;" onclick="window.scrubMusic(event)">
-                                    <div id="progressBarFill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff2a5f, #ff719a); border-radius: 10px; transition: width 0.1s linear; box-shadow: 0 0 10px rgba(255,42,95,0.5);"></div>
+                                    <div id="progressBarFill" style="width: 100%; height: 100%; background: linear-gradient(90deg, #ff2a5f, #ff719a); border-radius: 10px; transform-origin: left; transform: scaleX(0); will-change: transform; box-shadow: 0 0 10px rgba(255,42,95,0.5);"></div>
                                     <div id="progressDot" style="position: absolute; top: -3px; left: 0%; width: 12px; height: 12px; background: white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform: translateX(-50%); pointer-events: none; opacity: 0; transition: opacity 0.2s;"></div>
                                 </div>
 
@@ -1393,7 +1463,7 @@ window.executeLogout = async function() {
     setOnlineStatus(false);
     setTimeout(() => { signOut(auth).then(() => { 
             localStorage.removeItem("activeBridgeUser"); 
-            window.location.href = 'index.html'; }); }, 200); }
+            window.location.href = '././index.html'; }); }, 200); }
 async function saveVersionSnapshot(content) {
     const historyRef = ref(rtdb, `bridges/${currentBridgeId}/history`);
     push(historyRef, {content: content, author: currentUsername, timestamp: rtdbTime()});}
@@ -2033,7 +2103,6 @@ window.initMusicEngine = function() {
             const isPlayingRemote = data.playbackState === 'playing';
             
             if (data.lastActionBy === currentUsername) {
-                // We pressed play/scrubbed. Don't popup, just act locally.
                 if (isPlayingRemote) {
                     if(window.ytAudioPlayer) window.ytAudioPlayer.playVideo();
                     if(typeof window.togglePlaybackUI === 'function') window.togglePlaybackUI(true);
@@ -2042,12 +2111,10 @@ window.initMusicEngine = function() {
                     if(typeof window.togglePlaybackUI === 'function') window.togglePlaybackUI(false);
                 }
             } else {
-                // PARTNER PRESSED PLAY, PAUSE, OR SCRUBBED
                 window.pendingSyncTime = data.seekTime || 0;
                 window.pendingSyncTimestamp = data.actionTimestamp || Date.now();
                 window.pendingYtId = data.ytId; 
 
-                // ⚡ NEW: Scrub Interceptor 
                 if (data.isScrubbing && window.isAudioPlaying && window.ytAudioPlayer) {
                     const timePassed = (Date.now() - window.pendingSyncTimestamp) / 1000;
                     window.ytAudioPlayer.seekTo(window.pendingSyncTime + timePassed, true);
@@ -2069,25 +2136,29 @@ window.initMusicEngine = function() {
         }
     });
 
-    // History Feed logic
+    // ⚡ ANTI-LAG FIX: History Feed DOM Thrashing
     const historyRef = ref(rtdb, `bridges/${currentBridgeId}/music/history`);
     onValue(historyRef, (snap) => {
         const feedEl = document.getElementById('historyFeedList');
         if (!feedEl) return;
-        feedEl.innerHTML = "";
+        
         if (!snap.exists()) {
             feedEl.innerHTML = `<p style="color: var(--text-faded); font-size: 13px; text-align: center; margin-top: 20px;">No history yet. Start the playlist!</p>`;
             return;
         }
+        
         let tracks = [];
         snap.forEach(child => { tracks.push(child.val()); });
+        
+        // ⚡ Batch the HTML into one string so the browser only paints ONCE instead of 50 times
+        let batchHTML = "";
         tracks.reverse().forEach(track => {
             const dateStr = new Date(track.timestamp).toLocaleDateString();
             const artHtml = track.albumArt 
                 ? `<img src="${track.albumArt}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">`
                 : `<div style="width: 100%; height: 100%; border-radius: 10px; background: linear-gradient(135deg, #ff2a5f, #ff719a); display: flex; justify-content: center; align-items: center; font-size: 16px;">🎵</div>`;
 
-            feedEl.innerHTML += `
+            batchHTML += `
                 <div class="history-track">
                     <div style="width: 45px; height: 45px; flex-shrink: 0;">${artHtml}</div>
                     <div style="flex: 1; overflow: hidden;">
@@ -2098,13 +2169,15 @@ window.initMusicEngine = function() {
                 </div>
             `;
         });
+        feedEl.innerHTML = batchHTML; // One single DOM update!
     });
 }
 
-// --- 5. PROGRESS BAR & TIMELINE SCRUBBING ---
+// --- 5. PROGRESS BAR & TIMELINE SCRUBBING (ANTI-LAG 60FPS ENGINE) ---
 
-window.progressInterval = null;
+window.progressAnimationFrame = null;
 window.isRepeatOn = false;
+let lastRenderedSecond = -1;
 
 function formatTime(seconds) {
     if (!seconds || isNaN(seconds)) return "0:00";
@@ -2113,29 +2186,49 @@ function formatTime(seconds) {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
+// ⚡ ANTI-LAG FIX: Caching DOM elements so we don't search the page 60x a second
+const progressCache = { currEl: null, totalEl: null, fillEl: null, dotEl: null };
+
 window.startProgressLoop = function() {
-    if (window.progressInterval) clearInterval(window.progressInterval);
+    if (window.progressAnimationFrame) cancelAnimationFrame(window.progressAnimationFrame);
     
-    window.progressInterval = setInterval(() => {
+    // Cache once
+    progressCache.currEl = document.getElementById('currentTimeDisplay');
+    progressCache.totalEl = document.getElementById('totalTimeDisplay');
+    progressCache.fillEl = document.getElementById('progressBarFill');
+    progressCache.dotEl = document.getElementById('progressDot');
+    
+    function tick() {
         if (window.ytAudioPlayer && window.isAudioPlaying && typeof window.ytAudioPlayer.getCurrentTime === 'function') {
             const current = window.ytAudioPlayer.getCurrentTime();
             const total = window.ytAudioPlayer.getDuration();
             
-            const currEl = document.getElementById('currentTimeDisplay');
-            const totalEl = document.getElementById('totalTimeDisplay');
-            const fillEl = document.getElementById('progressBarFill');
-            const dotEl = document.getElementById('progressDot');
-            
-            if (currEl) currEl.innerText = formatTime(current);
-            if (totalEl) totalEl.innerText = formatTime(total);
-            
-            if (total > 0 && fillEl && dotEl) {
+            if (total > 0) {
+                // Smooth visual updates
                 const percent = (current / total) * 100;
-                fillEl.style.width = `${percent}%`;
-                dotEl.style.left = `${percent}%`;
+                if (progressCache.fillEl) progressCache.fillEl.style.width = `${percent}%`;
+                if (progressCache.dotEl) progressCache.dotEl.style.left = `${percent}%`;
+                
+                // Throttle text parsing to only 1 time per second (Saves massive CPU)
+                const currentSecond = Math.floor(current);
+                if (currentSecond !== lastRenderedSecond) {
+                    if (progressCache.currEl) progressCache.currEl.innerText = formatTime(current);
+                    if (progressCache.totalEl) progressCache.totalEl.innerText = formatTime(total);
+                    lastRenderedSecond = currentSecond;
+                }
             }
         }
-    }, 100);
+        // Native 60FPS browser loop instead of clunky setInterval
+        if (window.isAudioPlaying) {
+            window.progressAnimationFrame = requestAnimationFrame(tick);
+        }
+    }
+    
+    window.progressAnimationFrame = requestAnimationFrame(tick);
+}
+
+window.stopProgressLoop = function() {
+    if (window.progressAnimationFrame) cancelAnimationFrame(window.progressAnimationFrame);
 }
 
 window.scrubMusic = async function(event) {
@@ -2257,7 +2350,6 @@ window.onYouTubeIframeAPIReady = function() {
         events: {
             'onReady': function() { console.log("✅ Audio Engine Armed & Ready."); },
             'onStateChange': function(event) {
-                // ⚡ NEW: Repeat Engine Catch
                 if (event.data === YT.PlayerState.PLAYING) window.togglePlaybackUI(true);
                 if (event.data === YT.PlayerState.PAUSED) window.togglePlaybackUI(false);
                 if (event.data === YT.PlayerState.ENDED) {
@@ -2312,19 +2404,20 @@ window.togglePlaybackUI = function(isPlaying) {
         if (eq) eq.classList.add('playing');
         if (disk) disk.classList.add('playing');
         if (sideEq) sideEq.classList.add('playing');
-        if(typeof window.startProgressLoop === 'function') window.startProgressLoop(); // ⚡ Kickstart progress bar
+        if(typeof window.startProgressLoop === 'function') window.startProgressLoop(); // ⚡ Kickstart GPU loop
         if (dot) dot.style.opacity = '1'; 
     } else {
         if (eq) eq.classList.remove('playing');
         if (disk) disk.classList.remove('playing');
         if (sideEq) sideEq.classList.remove('playing');
-        if (window.progressInterval) clearInterval(window.progressInterval); // ⚡ Stop progress bar
+        if(typeof window.stopProgressLoop === 'function') window.stopProgressLoop(); // ⚡ Stop GPU loop
         if (dot) dot.style.opacity = '0';
     }
 }
 
 // Start the boot sequence
 bootPersistentAudioEngine();
+
 window.togglePlaylistContainer = function(btnElement) {
     const container = document.getElementById('playlistContainer');
     if (!container) return;
@@ -2335,31 +2428,25 @@ window.togglePlaylistContainer = function(btnElement) {
         const rect = btnElement.getBoundingClientRect();
         const parentRect = container.parentElement.getBoundingClientRect();
         
-        // Calculate the button position relative to the center of the screen
         const x = (rect.left + rect.width / 2) - parentRect.left;
         const y = (rect.top + rect.height / 2) - parentRect.top;
 
-        // Origin logic needs to be precise for the compact pop
         container.style.transformOrigin = `${x}px ${y}px`;
         container.classList.add('active');
     } else {
         container.classList.remove('active');
     }
 }
-// --- 9. PLAYLIST ADDITION ENGINE ---
-// --- 9. PLAYLIST ADDITION ENGINE (CORRECTED) ---
 
+// --- 9. PLAYLIST ADDITION ENGINE ---
 window.addToPlaylistOnly = async function() {
-    // 1. Extract values with Optional Chaining for safety
     const title = document.getElementById('dedicateTitle')?.value;
     const artist = document.getElementById('dedicateArtist')?.value;
     const albumArt = document.getElementById('hiddenAlbumArtUrl')?.value;
     const ytId = document.getElementById('hiddenYtId')?.value;
 
-    // 2. Critical Check
     if (!ytId || !albumArt) return alert("Search for a song first!");
 
-    // 3. Define the data object
     const finalSongData = {
         title: title,
         artist: artist,
@@ -2370,16 +2457,14 @@ window.addToPlaylistOnly = async function() {
     };
 
     try {
-        // ⚡ FIX: We are now using finalSongData correctly here
         await set(ref(rtdb, `bridges/${currentBridgeId}/music/playlist/${ytId}`), finalSongData);
         
-        // 4. Premium Visual Feedback
         const addBtn = document.querySelector('button[onclick*="addToPlaylistOnly"]');
         if(addBtn) {
             const originalIcon = addBtn.innerHTML;
             addBtn.innerHTML = "✅";
             addBtn.style.background = "rgba(46, 213, 115, 0.2)";
-            addBtn.style.pointerEvents = "none"; // Prevent double-clicks
+            addBtn.style.pointerEvents = "none"; 
 
             setTimeout(() => { 
                 addBtn.innerHTML = originalIcon; 
@@ -2393,15 +2478,15 @@ window.addToPlaylistOnly = async function() {
         console.error("Playlist Sync Error:", e);
         alert("Database connection failed. Try again!");
     }
-}// --- 10. ROBUST PLAYLIST LIVE-FEED (WITH REMOVE OPTION) ---
+}
+
+// --- 10. ROBUST PLAYLIST LIVE-FEED (WITH REMOVE OPTION) ---
 window.startPlaylistListener = function() {
     const playlistRef = ref(rtdb, `bridges/${currentBridgeId}/music/playlist`);
     
     onValue(playlistRef, (snap) => {
         const listEl = document.getElementById('playlistItems');
         if (!listEl) return; 
-
-        listEl.innerHTML = "";
 
         if (!snap.exists()) {
             listEl.innerHTML = `<p style="color:var(--text-faded); text-align:center; margin-top:60px;">Library is empty.</p>`;
@@ -2412,6 +2497,10 @@ window.startPlaylistListener = function() {
         snap.forEach(child => {
             playlistArray.push({ id: child.key, ...child.val() });
         });
+
+        // ⚡ ANTI-LAG FIX: Document Fragment batches all HTML changes into 1 rapid render
+        listEl.innerHTML = "";
+        const fragment = document.createDocumentFragment();
 
         playlistArray.reverse().forEach(song => {
             const item = document.createElement('div');
@@ -2439,44 +2528,29 @@ window.startPlaylistListener = function() {
                     <span style="font-size: 14px;">🗑️</span>
                 </button>
             `;
-            listEl.appendChild(item);
+            fragment.appendChild(item);
         });
+        
+        listEl.appendChild(fragment); // Single execution paint!
     });
 }
-// --- 11. PLAYLIST DELETION ENGINE ---
 
-window.removeFromPlaylist = async function(songId) {
-    // 1. Professional Confirmation (Optional but recommended)
-    if (!confirm("Remove this song from the bridge library?")) return;
-
-    try {
-        // 2. Remove from Firebase
-        const songRef = ref(rtdb, `bridges/${currentBridgeId}/music/playlist/${songId}`);
-        await remove(songRef);
-        
-        console.log(`🗑️ Track ${songId} purged from library.`);
-    } catch (e) {
-        console.error("Deletion failed:", e);
-        alert("Couldn't remove the song. Try again!");
-    }
-}// ==========================================
+// ==========================================
 // 11. PLAYLIST INTERACTION ENGINE (ROBUST)
 // ==========================================
 
-// --- PLAY TRIGGER ---
 window.playFromPlaylist = async function(songData) {
     if (!songData || !songData.ytId) return console.error("Invalid Song Data");
 
     console.log("💿 Playlist Selection: " + songData.title);
 
     try {
-        // Broadcast the selection to the partner via nowPlaying
         await update(ref(rtdb, `bridges/${currentBridgeId}/music/nowPlaying`), {
             title: songData.title,
             artist: songData.artist,
             albumArt: songData.albumArt,
             ytId: songData.ytId,
-            playbackState: 'playing', // Auto-play on selection
+            playbackState: 'playing', 
             lastActionBy: currentUsername,
             seekTime: 0,
             actionTimestamp: Date.now(),
@@ -2484,7 +2558,6 @@ window.playFromPlaylist = async function(songData) {
             isScrubbing: false
         });
 
-        // Close drawer for a premium transition
         if (typeof window.togglePlaylistContainer === 'function') {
             window.togglePlaylistContainer();
         }
@@ -2493,11 +2566,9 @@ window.playFromPlaylist = async function(songData) {
     }
 }
 
-// --- REMOVE TRIGGER ---
 window.removeFromPlaylist = async function(songId) {
     if (!songId) return;
 
-    // Professional UI Confirmation
     const confirmed = confirm("Remove this track from the bridge library?");
     if (!confirmed) return;
 
@@ -2509,8 +2580,7 @@ window.removeFromPlaylist = async function(songId) {
         console.error("Purge Failed:", e);
         alert("Could not remove song. Check your connection.");
     }
-}
-/// ==========================================
+}/// ==========================================
 // REAL-TIME INTERACTION ENGINE (HUGS & TAPS)
 // ==========================================
 
@@ -2572,7 +2642,7 @@ window.playPulseAnimation = function(type, senderName, isMissed = false, timesta
     overlay.className = `pulse-overlay ${type}`;
     
     // Determine the content dynamically
-    let emoji = type === 'hug' ? '🫂' : '👋';
+    let emoji = type === 'hug' ? '👻' : '👋';
     let actionText = '';
     
     // Format the time elegantly (e.g., "10:30 PM")
@@ -2702,63 +2772,100 @@ window.getInstagramSeenText = function(readAtTime) {
 // ==========================================
 // 🚀 THE LOCAL CHAT ENGINE (SYNCSPACE)
 // ==========================================
+// ==========================================
+// 🚀 2. THE LOCAL CHAT ENGINE (NOW WITH 0ms CACHE)
+// ==========================================
+// ==========================================
+// 🚀 2. THE LOCAL CHAT ENGINE (NO-FLICKER EDITION)
+// ==========================================
 window.initChatEngine = function() {
     if (typeof rtdb === 'undefined' || !currentBridgeId || !currentUsername) return;
 
     const messagesRef = ref(rtdb, `bridges/${currentBridgeId}/messages`);
     const partnerTypingRef = ref(rtdb, `bridges/${currentBridgeId}/typing/${partnerUsername}`);
+    const chatFeed = document.getElementById('chatFeed');
+    const cacheKey = `syncspace_messages_${currentBridgeId}`;
 
-    // --- REAL-TIME MESSAGE LISTENER & STAMPER ---
+    // 1. INSTANT CACHE RENDER (0ms Load Time)
+    if (chatFeed) {
+        const cachedData = localStorage.getItem(cacheKey);
+        if (cachedData) {
+            try {
+                const parsedCache = JSON.parse(cachedData);
+                const sortedCache = Object.entries(parsedCache).sort((a, b) => a[1].timestamp - b[1].timestamp);
+                
+                let myLastMsgIndex = -1;
+                for (let i = sortedCache.length - 1; i >= 0; i--) {
+                    if (sortedCache[i][1].sender === currentUsername) {
+                        myLastMsgIndex = i; break;
+                    }
+                }
+
+                sortedCache.forEach(([msgId, msg], index) => {
+                    renderMessage(msgId, msg, msg.sender === currentUsername, index === myLastMsgIndex);
+                });
+                
+                chatFeed.scrollTo({ top: chatFeed.scrollHeight, behavior: 'auto' });
+            } catch (e) {
+                console.error("Failed to parse local cache:", e);
+            }
+        }
+    }
+
+    // 2. REAL-TIME FIREBASE LISTENER (Smart DOM Updates)
     onValue(messagesRef, (snapshot) => {
-        const chatFeed = document.getElementById('chatFeed');
+        const currentFeed = document.getElementById('chatFeed');
+        if (!currentFeed) return;
         
-        // ⚡ CRITICAL FIX: If the chat feed isn't on screen, stop processing UI updates
-        if (!chatFeed) return;
-        
-        chatFeed.innerHTML = ""; 
-        
-        // We are looking at the chat, so update our global read receipt
         set(ref(rtdb, `bridges/${currentBridgeId}/readReceipts/${currentUsername}`), Date.now());
 
         if (snapshot.exists()) {
             const data = snapshot.val();
-            const sortedMsgs = Object.entries(data).sort((a, b) => a[1].timestamp - b[1].timestamp);
+            localStorage.setItem(cacheKey, JSON.stringify(data));
 
+            const sortedMsgs = Object.entries(data).sort((a, b) => a[1].timestamp - b[1].timestamp);
             const updates = {};
             let hasUnread = false;
 
-            // ⚡ INSTAGRAM ENGINE: Instantly stamp unstamped messages
             sortedMsgs.forEach(([msgId, msg]) => {
                 if (msg.sender !== currentUsername && !msg.readAt) {
                     const now = Date.now();
                     updates[`${msgId}/readAt`] = now;
-                    msg.readAt = now; // Optimistic local update so UI paints instantly
+                    msg.readAt = now; 
                     hasUnread = true;
                 }
             });
 
-            // Send stamps back to Firebase silently
             if (hasUnread) {
                 update(messagesRef, updates).catch(err => console.error("Receipt error:", err));
+                localStorage.setItem(cacheKey, JSON.stringify(data)); 
             }
 
-            // ⚡ FIND THE LAST MESSAGE SENT BY ME
             let myLastMsgIndex = -1;
             for (let i = sortedMsgs.length - 1; i >= 0; i--) {
                 if (sortedMsgs[i][1].sender === currentUsername) {
-                    myLastMsgIndex = i;
-                    break;
+                    myLastMsgIndex = i; break;
                 }
             }
 
-            // Render the UI
+            // ⚡ NO MORE WIPING THE DOM. Just loop and intelligently append/update.
             sortedMsgs.forEach(([msgId, msg], index) => {
-                const isMe = msg.sender === currentUsername;
-                const isMyLastMessage = (index === myLastMsgIndex); 
-                renderMessage(msgId, msg, isMe, isMyLastMessage);
+                renderMessage(msgId, msg, msg.sender === currentUsername, index === myLastMsgIndex);
             });
             
-            chatFeed.scrollTo({ top: chatFeed.scrollHeight, behavior: 'smooth' });
+            // ⚡ CLEANUP: If you unsent a message, we find it on screen and delete it
+            Array.from(currentFeed.children).forEach(child => {
+                const childMsgId = child.id.replace('msg-', '');
+                if (!data[childMsgId]) {
+                    child.style.transform = 'scale(0)';
+                    child.style.opacity = '0';
+                    setTimeout(() => child.remove(), 300); // Smooth exit animation
+                }
+            });
+
+        } else {
+            currentFeed.innerHTML = "";
+            localStorage.removeItem(cacheKey);
         }
     });
 
@@ -2773,9 +2880,7 @@ window.initChatEngine = function() {
         if (headerStatus) headerStatus.style.display = isTyping ? 'flex' : 'none';
         if (onlineStatus) onlineStatus.style.display = isTyping ? 'none' : 'flex';
     });
-};
-
-window.refreshReadReceipts = function() {
+};window.refreshReadReceipts = function() {
     const chatFeed = document.getElementById('chatFeed');
     if (!chatFeed) return;
     const messagesRef = ref(rtdb, `bridges/${currentBridgeId}/messages`);
@@ -2847,11 +2952,14 @@ window.sendTextMessage = async function() {
     }
 };
 // --- 4. THE UI RENDERER (Now handles Images, Videos, and Voice Notes) ---
+// --- 4. THE UI RENDERER (Smart DOM Reconciliation Engine) ---
 function renderMessage(msgId, msg, isMe, isMyLastMessage) {
+    // Hide messages older than your clear timestamp
+    if (window.myChatClearedAt && msg.timestamp <= window.myChatClearedAt) return;
+
     const chatFeed = document.getElementById('chatFeed');
-    const row = document.createElement('div');
-    row.className = `message-row ${isMe ? 'sent' : 'received'} animate-in`;
-    
+    if (!chatFeed) return;
+
     const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     let statusTextHTML = "";
 
@@ -2864,7 +2972,6 @@ function renderMessage(msgId, msg, isMe, isMyLastMessage) {
         }
     }
     
-    // ⚡ MEDIA PARSER: Build the HTML for the media if it exists
     let mediaHTML = "";
     if (msg.mediaUrl) {
         if (msg.mediaType === 'image') {
@@ -2872,34 +2979,60 @@ function renderMessage(msgId, msg, isMe, isMyLastMessage) {
         } else if (msg.mediaType === 'video') {
             mediaHTML = `<video src="${msg.mediaUrl}" controls style="max-width: 100%; border-radius: 14px; margin-bottom: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);"></video>`;
         } else if (msg.mediaType === 'audio') {
-            // Sleek custom glass styling for the native audio player
             mediaHTML = `<audio src="${msg.mediaUrl}" controls style="max-width: 100%; height: 35px; border-radius: 20px; outline: none; margin-bottom: 8px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3)) ${isMe ? 'invert(1)' : ''};"></audio>`;
         }
     }
+// ↩️ THE INSTA-STYLE REPLY SNIPPET
+    let replyHTML = "";
+    if (msg.replyTo) {
+        replyHTML = `
+            <div onclick="event.stopPropagation(); window.scrollToMessage('${msg.replyTo.id}')" 
+                 style="background: rgba(0,0,0,0.15); border-left: 3px solid ${isMe ? 'rgba(255,255,255,0.7)' : '#ff2a5f'}; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; font-size: 11px; cursor: pointer; transition: background 0.2s;">
+                <strong style="color: ${isMe ? 'white' : '#ff2a5f'}; letter-spacing: 0.5px;">${msg.replyTo.sender}</strong><br>
+                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; max-width: 180px; opacity: 0.8;">${msg.replyTo.text}</span>
+            </div>
+        `;
+    }
 
-    // Wrap text nicely if it exists alongside media
     let textHTML = msg.text ? `<span>${msg.text.replace(/`/g, '\\`').replace(/\${/g, '\\${')}</span>` : "";
-    
-    row.innerHTML = `
+
+    // ⚡ ADDED DATA-SWIPE TAGS FOR THE GESTURE ENGINE
+    const innerContent = `
         <div style="display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'}; max-width: 100%;">
             <div class="bubble ${isMe ? 'sent' : 'received'}" 
-                 onclick="window.openMessageMenu('${msgId}', \`${msg.text ? msg.text.replace(/`/g, '\\`').replace(/\${/g, '\\${') : ''}\`, ${isMe}, ${msg.timestamp})">
-                
+                 data-swipe-id="${msgId}" 
+                 data-swipe-text="${msg.text ? msg.text.replace(/"/g, '&quot;').replace(/`/g, '\\`').replace(/\${/g, '\\${') : 'Media Attachment'}" 
+                 data-swipe-sender="${msg.sender}"
+                 onclick="window.activeMsgSender = '${msg.sender}'; window.openMessageMenu('${msgId}', \`${msg.text ? msg.text.replace(/`/g, '\\`').replace(/\${/g, '\\${') : ''}\`, ${isMe}, ${msg.timestamp})">
+                ${replyHTML}
                 ${mediaHTML}
                 ${textHTML}
-                
                 ${msg.edited ? '<span style="font-size:10px; opacity:0.6; margin-left:6px; font-style:italic;">(edited)</span>' : ''}
-                
                 <div class="msg-time" style="display: flex; align-items: center; justify-content: ${isMe ? 'flex-end' : 'flex-start'}; margin-top: 6px;">
                     ${time} ${statusTextHTML}
                 </div>
             </div>
         </div>
-    `;
-    
-    chatFeed.appendChild(row);
-}
-// --- 3D MENU INTERACTIONS ---
+    `;    // ⚡ CHECK IF MESSAGE ALREADY EXISTS ON SCREEN
+    let existingRow = document.getElementById(`msg-${msgId}`);
+
+    if (existingRow) {
+        // Only update the DOM if the content actually changed (e.g. read receipt updated)
+        if (existingRow.innerHTML !== innerContent) {
+            existingRow.innerHTML = innerContent;
+        }
+    } else {
+        // It's a brand new message, append it to the bottom!
+        const row = document.createElement('div');
+        row.id = `msg-${msgId}`; // Tag it with the Firebase ID
+        row.className = `message-row ${isMe ? 'sent' : 'received'} animate-in`;
+        row.innerHTML = innerContent;
+        chatFeed.appendChild(row);
+        
+        // Only trigger smooth scroll when a NEW message physically arrives
+        chatFeed.scrollTo({ top: chatFeed.scrollHeight, behavior: 'smooth' });
+    }
+}// --- 3D MENU INTERACTIONS ---
 window.openMessageMenu = function(msgId, text, isSentByMe, timestamp) {
     if (navigator.vibrate) navigator.vibrate([20, 40]); 
     
@@ -2980,20 +3113,19 @@ window.handleMediaSelection = async function(event) {
     await window.uploadMediaToFirebase(file, mediaType);
     event.target.value = ""; // Reset input
 };
-
 window.uploadMediaToFirebase = async function(file, mediaType) {
     if (typeof window.storage === 'undefined' || typeof window.sRef === 'undefined') {
-        alert("Firebase Storage is not initialized!");
+        console.error("Firebase Storage is not initialized!");
         return;
     }
 
+    // Safely grab UI elements (They might be null if we aren't on the Messages tab!)
     const progressContainer = document.getElementById('mediaUploadProgress');
     const progressBar = document.getElementById('uploadProgressBar');
     const progressText = document.getElementById('uploadProgressText');
     
-    progressContainer.style.display = 'flex';
+    if (progressContainer) progressContainer.style.display = 'flex';
 
-    // Create a unique file name
     const uniqueName = `${Date.now()}_${file.name || 'voicenote.webm'}`;
     const storageReference = window.sRef(window.storage, `bridges/${currentBridgeId}/media/${uniqueName}`);
 
@@ -3002,36 +3134,32 @@ window.uploadMediaToFirebase = async function(file, mediaType) {
     uploadTask.on('state_changed', 
         (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            progressBar.style.width = progress + '%';
-            progressText.innerText = Math.round(progress) + '%';
+            // Only update UI if the elements actually exist on screen
+            if (progressBar) progressBar.style.width = progress + '%';
+            if (progressText) progressText.innerText = Math.round(progress) + '%';
         }, 
         (error) => {
             console.error("Upload failed:", error);
-            progressContainer.style.display = 'none';
-            alert("Failed to upload media.");
+            if (progressContainer) progressContainer.style.display = 'none';
         }, 
         async () => {
-            // Upload completed successfully, now get the download URL
+            // Upload successful!
             const downloadURL = await window.getDownloadURL(uploadTask.snapshot.ref);
-            progressContainer.style.display = 'none';
-            progressBar.style.width = '0%';
+            if (progressContainer) progressContainer.style.display = 'none';
+            if (progressBar) progressBar.style.width = '0%';
             
-            // Push to Realtime Database
             const messagesRef = ref(rtdb, `bridges/${currentBridgeId}/messages`);
             await push(messagesRef, {
-                text: "", // Optional text attached to media
+                text: mediaType === 'audio' && !file.name ? "" : "", // Auto-label recordings
                 mediaUrl: downloadURL,
                 mediaType: mediaType,
                 sender: currentUsername,
                 timestamp: Date.now(),
                 edited: false
             });
-            
-            if (navigator.vibrate) navigator.vibrate([10, 20]);
         }
     );
 };
-
 // --- VOICE RECORDER CONTROLS ---
 window.startVoiceRecord = async function() {
     if (isRecording) return;
@@ -3087,4 +3215,395 @@ window.stopVoiceRecord = function() {
     btn.style.transform = 'scale(1)';
     btn.style.boxShadow = 'none';
     if (navigator.vibrate) navigator.vibrate(10);
+};
+// ==========================================
+// 📞 FLAGSHIP WEBRTC CALLING ENGINE (ULTIMATE)
+// ==========================================
+
+window.peerConnection = null;
+window.localStream = null;
+window.remoteStream = null;
+window.isCallActive = false;
+window.isCallMuted = false;
+
+// Timer & History Variables
+window.callStartTime = 0;
+window.callTimerInterval = null;
+window.callDurationSeconds = 0;
+window.currentCallId = null; 
+
+// Recording Variables
+window.callRecorder = null;
+window.recordedCallChunks = [];
+window.isRecordingCall = false;
+window.audioContext = null;
+
+const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+window.initCallEngine = function() {
+    if (typeof rtdb === 'undefined' || !currentBridgeId) return;
+
+    const callRef = ref(rtdb, `bridges/${currentBridgeId}/call`);
+    
+    // 1. Listen for incoming live calls
+    onValue(callRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.offer && data.caller !== currentUsername && !window.isCallActive) {
+            window.callInitiator = data.caller; 
+            window.callStartTime = data.timestamp;
+            window.currentCallId = data.callId;
+            showCallUI('Incoming Call...', true, data.caller);
+        }
+        if (!data && window.isCallActive) {
+            handleRemoteHangup();
+        }
+    });
+
+    // 2. 🔴 NEW: BACKGROUND MISSED CALL CALCULATOR
+    const myHistoryReadRef = ref(rtdb, `bridges/${currentBridgeId}/callHistoryReadReceipts/${currentUsername}`);
+    const callHistoryRef = ref(rtdb, `bridges/${currentBridgeId}/callHistory`);
+
+    onValue(myHistoryReadRef, (readSnap) => {
+        const myLastCheckedHistory = readSnap.val() || 0;
+
+        onValue(callHistoryRef, (historySnap) => {
+            let missedCount = 0;
+            
+            if (historySnap.exists()) {
+                historySnap.forEach(child => {
+                    const call = child.val();
+                    // If she called me, it was missed (duration 0), AND it happened after I last opened the menu
+                    if (call.caller !== currentUsername && call.duration === 0 && call.timestamp > myLastCheckedHistory) {
+                        missedCount++;
+                    }
+                });
+            }
+            
+            // Inject to the UI
+            const badge = document.getElementById('missedCallBadge');
+            if (badge) {
+                if (missedCount > 0) {
+                    badge.style.display = 'flex';
+                    badge.innerText = missedCount > 9 ? '9+' : missedCount;
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        });
+    });
+};window.startAudioCall = async function() {
+    showCallUI('Calling...', false, partnerUsername);
+    window.isCallActive = true;
+    window.currentCallId = `call_${Date.now()}`;
+    window.callInitiator = currentUsername;
+
+    // ⚡ THE FIX: PRE-LOG THE CALL AS MISSED (DURATION 0) IMMEDIATELY
+    set(ref(rtdb, `bridges/${currentBridgeId}/callHistory/${window.currentCallId}`), {
+        caller: currentUsername,
+        duration: 0,
+        timestamp: Date.now()
+    });
+
+    try {
+        window.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        document.getElementById('localAudio').srcObject = window.localStream;
+
+        window.peerConnection = new RTCPeerConnection(servers);
+        window.localStream.getTracks().forEach(track => window.peerConnection.addTrack(track, window.localStream));
+
+        window.peerConnection.ontrack = (event) => {
+            window.remoteStream = event.streams[0];
+            document.getElementById('remoteAudio').srcObject = window.remoteStream;
+            triggerCallConnectedUI();
+        };
+
+        window.peerConnection.onicecandidate = (event) => {
+            if (event.candidate) push(ref(rtdb, `bridges/${currentBridgeId}/call/callerCandidates`), event.candidate.toJSON());
+        };
+
+        const offerDescription = await window.peerConnection.createOffer();
+        await window.peerConnection.setLocalDescription(offerDescription);
+
+        await set(ref(rtdb, `bridges/${currentBridgeId}/call`), {
+            callId: window.currentCallId,
+            offer: { type: offerDescription.type, sdp: offerDescription.sdp },
+            caller: currentUsername,
+            timestamp: Date.now()
+        });
+
+        onValue(ref(rtdb, `bridges/${currentBridgeId}/call/answer`), (snapshot) => {
+            const answer = snapshot.val();
+            if (answer && !window.peerConnection.currentRemoteDescription) {
+                const answerDescription = new RTCSessionDescription(answer);
+                window.peerConnection.setRemoteDescription(answerDescription);
+            }
+        });
+
+        onChildAdded(ref(rtdb, `bridges/${currentBridgeId}/call/calleeCandidates`), (snapshot) => {
+            window.peerConnection.addIceCandidate(new RTCIceCandidate(snapshot.val()));
+        });
+
+    } catch (error) {
+        console.error("Call failed:", error);
+        alert("Microphone access required.");
+        hangUpCall();
+    }
+};
+window.answerCall = async function() {
+    document.getElementById('answerCallBtn').style.display = 'none';
+    document.getElementById('callStatusText').innerText = 'Connecting...';
+    window.isCallActive = true;
+
+    try {
+        window.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        document.getElementById('localAudio').srcObject = window.localStream;
+
+        window.peerConnection = new RTCPeerConnection(servers);
+        window.localStream.getTracks().forEach(track => window.peerConnection.addTrack(track, window.localStream));
+
+        window.peerConnection.ontrack = (event) => {
+            window.remoteStream = event.streams[0];
+            document.getElementById('remoteAudio').srcObject = window.remoteStream;
+            triggerCallConnectedUI();
+        };
+
+        window.peerConnection.onicecandidate = (event) => {
+            if (event.candidate) push(ref(rtdb, `bridges/${currentBridgeId}/call/calleeCandidates`), event.candidate.toJSON());
+        };
+
+        const callSnapshot = await get(ref(rtdb, `bridges/${currentBridgeId}/call`));
+        const callData = callSnapshot.val();
+
+        await window.peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
+        const answerDescription = await window.peerConnection.createAnswer();
+        await window.peerConnection.setLocalDescription(answerDescription);
+
+        await set(ref(rtdb, `bridges/${currentBridgeId}/call/answer`), { type: answerDescription.type, sdp: answerDescription.sdp });
+
+        onChildAdded(ref(rtdb, `bridges/${currentBridgeId}/call/callerCandidates`), (snapshot) => {
+            window.peerConnection.addIceCandidate(new RTCIceCandidate(snapshot.val()));
+        });
+
+    } catch (error) {
+        console.error("Answer failed:", error);
+        hangUpCall();
+    }
+};
+
+// --- ⏱️ CALL TIMER & UI UPDATES ---
+function triggerCallConnectedUI() {
+    document.getElementById('callStatusText').innerText = 'Connected 🎙️';
+    document.getElementById('muteCallBtn').style.display = 'flex';
+    document.getElementById('recordCallBtn').style.display = 'flex';
+    document.getElementById('callTimerDisplay').style.display = 'block';
+    
+    window.callStartTime = Date.now();
+    window.callDurationSeconds = 0;
+    
+    window.callTimerInterval = setInterval(() => {
+        window.callDurationSeconds = Math.floor((Date.now() - window.callStartTime) / 1000);
+        const mins = String(Math.floor(window.callDurationSeconds / 60)).padStart(2, '0');
+        const secs = String(window.callDurationSeconds % 60).padStart(2, '0');
+        document.getElementById('callTimerDisplay').innerText = `${mins}:${secs}`;
+    }, 1000);
+}
+
+// --- 🎛️ ADVANCED CONTROLS (Mute & Record) ---
+window.toggleCallMute = function() {
+    if (!window.localStream) return;
+    window.isCallMuted = !window.isCallMuted;
+    window.localStream.getAudioTracks()[0].enabled = !window.isCallMuted;
+    
+    const muteBtn = document.getElementById('muteCallBtn');
+    muteBtn.classList.toggle('active', window.isCallMuted);
+    muteBtn.innerText = window.isCallMuted ? '🔇' : '🎙️';
+};
+// --- 🎛️ ADVANCED CONTROLS (Recording) ---
+window.toggleCallRecording = function() {
+    const recordBtn = document.getElementById('recordCallBtn');
+    const indicator = document.getElementById('recordingIndicator');
+
+    if (window.isRecordingCall) {
+        window.callRecorder.stop();
+        window.isRecordingCall = false;
+        recordBtn.classList.remove('active');
+        indicator.style.display = 'none';
+        return;
+    }
+
+    if (!window.localStream || !window.remoteStream) {
+        alert("Both streams must be connected to record."); return;
+    }
+
+    window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const dest = window.audioContext.createMediaStreamDestination();
+    
+    const localSource = window.audioContext.createMediaStreamSource(window.localStream);
+    const remoteSource = window.audioContext.createMediaStreamSource(window.remoteStream);
+    
+    localSource.connect(dest);
+    remoteSource.connect(dest);
+
+    window.callRecorder = new MediaRecorder(dest.stream);
+    window.recordedCallChunks = [];
+
+    window.callRecorder.ondataavailable = e => { if (e.data.size > 0) window.recordedCallChunks.push(e.data); };
+    
+    window.callRecorder.onstop = async () => {
+        // ⚡ FIX: We package it securely and pass a fake name so it processes flawlessly
+        const audioBlob = new Blob(window.recordedCallChunks, { type: 'audio/webm' });
+        audioBlob.name = `Call_Recording_${Date.now()}.webm`; 
+        await window.uploadMediaToFirebase(audioBlob, 'audio'); 
+    };
+
+    window.callRecorder.start();
+    window.isRecordingCall = true;
+    recordBtn.classList.add('active');
+    indicator.style.display = 'block';
+};
+
+// --- 🚪 HANGUP & NETWORK TERMINATION ---
+window.hangUpCall = function() {
+    terminateCallNetwork();
+};
+
+function handleRemoteHangup() {
+    terminateCallNetwork();
+}
+
+function terminateCallNetwork() {
+    clearInterval(window.callTimerInterval);
+    if (window.isRecordingCall) window.toggleCallRecording(); 
+    
+    // ⚡ THE FIX: IF THE CALL CONNECTED, UPDATE THE DURATION IN THE DB
+    if (window.currentCallId && window.callDurationSeconds > 0) {
+        update(ref(rtdb, `bridges/${currentBridgeId}/callHistory/${window.currentCallId}`), {
+            duration: window.callDurationSeconds
+        });
+    }
+    
+    if (window.peerConnection) window.peerConnection.close();
+    if (window.localStream) window.localStream.getTracks().forEach(track => track.stop());
+    
+    if (typeof rtdb !== 'undefined' && currentBridgeId) remove(ref(rtdb, `bridges/${currentBridgeId}/call`));
+    resetCallUI();
+}
+// ⚡ FIX: PERSPECTIVE-BASED HISTORY LOGGING
+function logCallHistory() {
+    // If we don't know who started it or the call ID, abort.
+    if (!currentBridgeId || !window.currentCallId || !window.callInitiator) return;
+    
+    const duration = window.callDurationSeconds || 0;
+    
+    // We use the unique Call ID as the database key. 
+    // This prevents duplicate logs if both users hang up at the same exact time!
+    const historyRef = ref(rtdb, `bridges/${currentBridgeId}/callHistory/${window.currentCallId}`);
+    
+    set(historyRef, {
+        caller: window.callInitiator, // We strictly save WHO made the call
+        duration: duration,
+        timestamp: window.callStartTime || Date.now()
+    });
+}
+
+function showCallUI(statusText, isIncoming, callerName) {
+    const overlay = document.getElementById('activeCallOverlay');
+    document.getElementById('callStatusText').innerText = statusText;
+    document.getElementById('callPartnerName').innerText = callerName || partnerUsername;
+    document.getElementById('answerCallBtn').style.display = isIncoming ? 'block' : 'none';
+    
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.style.opacity = '1', 10);
+}
+
+function resetCallUI() {
+    const overlay = document.getElementById('activeCallOverlay');
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.style.display = 'none', 400);
+    
+    document.getElementById('muteCallBtn').style.display = 'none';
+    document.getElementById('recordCallBtn').style.display = 'none';
+    document.getElementById('callTimerDisplay').style.display = 'none';
+    document.getElementById('callTimerDisplay').innerText = "00:00";
+    
+    window.isCallActive = false;
+    window.peerConnection = null;
+    window.localStream = null;
+    window.remoteStream = null;
+    window.isCallMuted = false;
+    window.callDurationSeconds = 0;
+}
+window.openCallHistory = function() {
+    document.getElementById('callHistoryModal').classList.add('active');
+    const list = document.getElementById('callHistoryList');
+    list.innerHTML = `<p style="text-align:center; color: var(--text-faded);">Loading logs...</p>`;
+
+    // Keep an active listener so the UI updates instantly if you delete something
+    onValue(ref(rtdb, `bridges/${currentBridgeId}/callHistory`), (snapshot) => {
+        if (!snapshot.exists()) {
+            list.innerHTML = `<div style="text-align:center; padding: 30px; color: var(--text-faded);">
+                                <span style="font-size: 30px; display:block; margin-bottom: 10px;">📭</span>
+                                No past calls found.
+                              </div>`;
+            return;
+        }
+
+        // Convert object to array and keep the DB keys for deletion
+        const historyArray = Object.entries(snapshot.val()).sort((a,b) => b[1].timestamp - a[1].timestamp);
+        list.innerHTML = "";
+
+        historyArray.forEach(([callKey, call]) => {
+            const timeStr = new Date(call.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const mins = Math.floor(call.duration / 60);
+            const secs = call.duration % 60;
+            const durationStr = call.duration > 0 ? `${mins}m ${secs}s` : "";
+            
+            const isMeCaller = call.caller === currentUsername;
+            
+            let icon = ""; let color = ""; let displayType = "";
+
+            // ⚡ THE FIX: PERFECT MISSED/CANCELED LOGIC
+            if (call.duration === 0) {
+                if (isMeCaller) {
+                    displayType = "Canceled"; icon = "🚫"; color = "rgba(255,255,255,0.5)";
+                } else {
+                    displayType = "Missed"; icon = "❌"; color = "#ff3b30";
+                }
+            } else if (isMeCaller) {
+                displayType = "Outgoing"; icon = "↗️"; color = "#0a84ff";
+            } else {
+                displayType = "Incoming"; icon = "↙️"; color = "#32d74b";
+            }
+
+            list.innerHTML += `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 12px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 20px;">${icon}</span>
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; color: ${color};">${displayType} Call</div>
+                            <div style="font-size: 11px; color: var(--text-faded);">${timeStr}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span style="font-size: 13px; font-weight: 700; color: white;">${durationStr || displayType}</span>
+                        <button class="icon-btn-pro" data-tip="Delete Record" style="width: 28px; height: 28px; background: rgba(255,59,48,0.1); color: #ff3b30; border-radius: 6px;" onclick="window.deleteCallLog('${callKey}')">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+    });
+};
+
+// --- 🗑️ DELETION LOGIC ---
+window.deleteCallLog = async function(callKey) {
+    if (confirm("Delete this call record?")) {
+        await remove(ref(rtdb, `bridges/${currentBridgeId}/callHistory/${callKey}`));
+        if (navigator.vibrate) navigator.vibrate(10);
+    }
+};
+
+window.clearAllCallHistory = async function() {
+    if (confirm("Are you sure you want to permanently clear the entire call history?")) {
+        await remove(ref(rtdb, `bridges/${currentBridgeId}/callHistory`));
+        if (navigator.vibrate) navigator.vibrate([10, 20]);
+    }
 };
