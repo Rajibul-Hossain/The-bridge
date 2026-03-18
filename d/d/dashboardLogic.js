@@ -4,7 +4,6 @@ import { initInteractionListener } from './interxn.js';
 import { getFirestore, doc, getDoc, updateDoc, onSnapshot as firestoreSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getDatabase, ref, onValue, set, get, push, onDisconnect, serverTimestamp as rtdbTime, update, remove, onChildAdded} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
-
 const firebaseConfig = {
     apiKey: "AIzaSyDEbvPzoahjdt0w5s2SF7Usn3ZnOxF2v38",
     authDomain: "ever-us.firebaseapp.com",
@@ -14,8 +13,7 @@ const firebaseConfig = {
     appId: "1:925623567345:web:10c9d1e5873a4df7983a50",
     measurementId: "G-6E4K45TWLV"};
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const auth = getAuth(app);const db = getFirestore(app);
 const rtdb = getDatabase(app); 
 export const storage = getStorage(app);
 Quill.register('modules/cursors', QuillCursors);
@@ -37,19 +35,14 @@ import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com
 setPersistence(auth, browserLocalPersistence)
     .then(() => {initAuthListener();})
     .catch((error) => {console.error("Persistence Error:", error);});
-
-function initAuthListener() {
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            currentUser = user;
+function initAuthListener() {onAuthStateChanged(auth, async (user) => {
+        if (user) {currentUser = user;
             try {const userRef = doc(db, "users", user.uid);
                 const myDoc = await getDoc(userRef);
-                if (myDoc.exists()) {
-                    const userData = myDoc.data();
+                if (myDoc.exists()) {const userData = myDoc.data();
                     currentUsername = userData.username;
                     currentBridgeId = userData.bridgeId;
                     partnerUid = userData.partnerUid;
-
                     if (!currentBridgeId || !partnerUid) {
                         window.location.href = 'nexus.html';
                         return;
@@ -60,6 +53,7 @@ function initAuthListener() {
                     activateGlobalUpdateListener();
                     initGlobalReceiptEngine();
                     window.initCallEngine();
+                   
                     activatePresenceEngine();
                     activateLiveCanvas();
                     activateTelemetry();
@@ -86,7 +80,6 @@ function initAuthListener() {
                 alert("Error connecting to bridge. Please check your connection.");
             }
         } else {
-            // No user is signed in
             window.location.href = 'index.html';
         }
     });
@@ -628,7 +621,193 @@ if (viewName === 'overview') {
         syncPulseNoteUI();
         initMilestonesEngine(); 
         if(typeof window.initInteractionListener === 'function') window.initInteractionListener();
-    }else if (viewName === 'journal') {
+    }
+    else if (viewName === 'cinema') {
+        box.innerHTML = `
+            <style>
+                /* ==========================================
+                   💎 TWINVISION: FLAWLESS SPATIAL LAYOUT
+                   ========================================== */
+                :root {
+                    --cinema-bg: #030305;
+                    --glass-surface: rgba(22, 22, 28, 0.65);
+                    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+                    --apple-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+                }
+
+                .cinema-wrapper {
+                    display: flex; flex-direction: column; height: 100%; width: 100%;
+                    padding: 0; box-sizing: border-box; position: relative;
+                    background: var(--cinema-bg);
+                    background-image: radial-gradient(circle at 50% 0%, rgba(255, 42, 95, 0.05), transparent 60%);
+                    font-family: 'Poppins', -apple-system, sans-serif; 
+                    overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth;
+                }
+                
+                .cinema-header-pro {
+                    display: flex; justify-content: space-between; align-items: center;
+                    margin: 20px 20px 0 20px; z-index: 50; position: sticky; top: 20px;
+                    background: rgba(18, 18, 24, 0.6);
+                    backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%);
+                    padding: 16px 24px; border-radius: 24px; border: var(--glass-border);
+                    box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 20px 40px -15px rgba(0,0,0,0.8);
+                }
+                
+                .header-text h2 { margin: 0; color: #FFF; font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+                .header-text p { margin: 2px 0 0 0; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;}
+                
+                .cinema-search-bar {
+                    display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.4);
+                    padding: 8px 12px 8px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.04); 
+                    flex: 1; max-width: 380px; transition: all 0.3s ease;
+                }
+                .cinema-search-bar:focus-within {
+                    background: rgba(0,0,0,0.6); border-color: rgba(255, 42, 95, 0.5); box-shadow: 0 0 20px rgba(255,42,95,0.15);
+                }
+                .cinema-input {
+                    background: transparent; border: none; color: white; width: 100%;
+                    font-family: inherit; font-size: 14px; outline: none; font-weight: 500;
+                }
+                
+                /* ⚡ CRITICAL FIX: THE STICKY CATEGORY SHELF */
+                .cinema-categories-container {
+                    position: sticky; top: 85px; z-index: 45; /* Sits right below the header */
+                    background: linear-gradient(to bottom, var(--cinema-bg) 60%, transparent 100%);
+                    padding: 15px 20px 20px 20px; margin-top: 5px;
+                }
+                
+                .cinema-categories {
+                    display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+                }
+                .cinema-categories::-webkit-scrollbar { display: none; }
+                
+                .cat-pill {
+                    background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.7); 
+                    border: var(--glass-border); padding: 10px 20px; border-radius: 24px; 
+                    font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; 
+                    transition: all 0.2s ease; scroll-snap-align: start; backdrop-filter: blur(10px);
+                }
+                .cat-pill:hover { background: rgba(255,255,255,0.08); color: white; }
+                .cat-pill.active { background: white; color: black; font-weight: 600; box-shadow: 0 10px 20px rgba(255,255,255,0.15); }
+                .cat-pill.shorts { background: linear-gradient(135deg, #ff0050, #00f2fe); color: white; border: none; font-weight: 600; }
+                
+                /* 🎬 RESPONSIVE GRID (Slides UNDER the categories) */
+                .cinema-results-grid {
+                    display: none; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                    gap: 20px; width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 20px 100px 20px;
+                    animation: popIn3D 0.5s var(--apple-ease) forwards; z-index: 10; position: relative;
+                }
+                .yt-card {
+                    background: rgba(20, 20, 26, 0.4); border: var(--glass-border); border-radius: 20px; 
+                    overflow: hidden; cursor: pointer; transition: all 0.3s var(--apple-ease); 
+                    display: flex; flex-direction: column; position: relative;
+                }
+                .yt-card:hover {
+                    transform: translateY(-6px) scale(1.01); background: rgba(30, 30, 38, 0.8);
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1);
+                }
+                .yt-thumb-wrapper { position: relative; overflow: hidden; border-radius: 20px 20px 0 0; }
+                .yt-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; transition: transform 0.5s var(--apple-ease); }
+                .yt-card:hover .yt-thumb { transform: scale(1.03); }
+                .yt-thumb.is-short { aspect-ratio: 9/16; max-height: 400px; border-radius: 20px; }
+                .yt-info { padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+                .yt-title { color: rgba(255,255,255,0.95); font-size: 14px; font-weight: 600; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+                .yt-channel { color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 500; }
+
+                /* 🍿 THEATER STAGE */
+                .cinema-stage {
+                    flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+                    position: relative; width: 100%; max-width: 1000px; margin: 0 auto; padding: 0 20px;
+                    animation: fadeScaleIn 0.5s var(--apple-ease) forwards; z-index: 20;
+                }
+                .ambient-glow {
+                    position: absolute; top: 15%; left: 5%; right: 5%; bottom: 15%;
+                    background: radial-gradient(ellipse at center, rgba(255,42,95,0.35) 0%, rgba(10,132,255,0.2) 50%, transparent 80%);
+                    filter: blur(80px); opacity: 0; z-index: 0; pointer-events: none; transition: opacity 1.5s ease;
+                }
+                .ambient-glow.active { opacity: 1; animation: breatheGlow 4s infinite alternate ease-in-out; }
+                @keyframes breatheGlow { 0% { filter: blur(80px); opacity: 0.8; } 100% { filter: blur(100px); opacity: 1; } }
+                
+                .video-container {
+                    width: 100%; max-height: 75vh; aspect-ratio: 16 / 9; 
+                    background: #000; border-radius: 24px; overflow: hidden; 
+                    box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.1);
+                    z-index: 1; position: relative; display: flex;
+                }
+                .video-container.is-short { width: auto; height: 80vh; aspect-ratio: 9 / 16; border-radius: 28px; }
+                #ytCinemaPlayer, .video-container iframe { width: 100% !important; height: 100% !important; border: none !important; display: block; }
+                
+                .cinema-controls-island {
+                    display: flex; justify-content: center; align-items: center; gap: 15px;
+                    margin-top: 25px; z-index: 10; background: rgba(20, 20, 25, 0.85); 
+                    padding: 10px 20px; border-radius: 40px; border: var(--glass-border);
+                    backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%);
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1);
+                }
+
+                @media (max-width: 768px) {
+                    .cinema-header-pro { margin: 10px; flex-direction: column; align-items: stretch; border-radius: 20px; padding: 15px; gap: 12px; }
+                    .cinema-search-bar { max-width: 100%; }
+                    .cinema-categories-container { top: 145px; } /* Adjust for taller mobile header */
+                    .cinema-results-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 0 10px 100px 10px; }
+                    .yt-title { font-size: 13px; -webkit-line-clamp: 3; }
+                    .video-container { border-radius: 16px; }
+                    .video-container.is-short { width: 100%; height: auto; }
+                    .cinema-controls-island { flex-wrap: wrap; margin-top: 15px; border-radius: 24px; }
+                }
+                @keyframes fadeScaleIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+            </style>
+            
+            <div class="cinema-wrapper">
+                <div class="cinema-header-pro">
+                    <div class="header-text">
+                        <h2>TwinVision</h2>
+                        <p>Solo & Sync Theater</p>
+                    </div>
+                    <div class="cinema-search-bar">
+                        <span style="font-size: 16px; opacity: 0.6;">🔍</span>
+                        <input type="text" id="cinemaSearchInput" class="cinema-input" placeholder="Search or paste link..." onkeydown="if(event.key === 'Enter') window.searchYouTubeAPI()">
+                        <button class="icon-btn-pro" style="background: rgba(255,255,255,0.1); color: white; width: 28px; height: 28px; border-radius: 8px;" onclick="window.searchYouTubeAPI()">▶</button>
+                    </div>
+                </div>
+
+                <div class="cinema-categories-container" id="cinemaPillsContainer">
+                    <div class="cinema-categories" id="cinemaPills"></div>
+                </div>
+
+                <div id="cinemaResultsGrid" class="cinema-results-grid" style="display: grid;">
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 100px 20px; color: var(--text-faded);">
+                        <span class="pulse-dot" style="width: 15px; height: 15px; background: #ff2a5f; margin: 0 auto 20px auto;"></span>
+                        <span style="font-size: 14px; letter-spacing: 0.5px;">Curating your flagship feed...</span>
+                    </div>
+                </div>
+
+                <div class="cinema-stage" id="cinemaTheaterStage" style="display: none;">
+                    <button class="pro-btn" style="align-self: flex-start; margin-bottom: 20px; background: rgba(255,255,255,0.05); border: var(--glass-border); font-size: 12px; padding: 8px 16px; border-radius: 20px; backdrop-filter: blur(10px);" onclick="window.closeTheaterAndBrowse()">
+                        <span style="margin-right: 5px;">←</span> Back to Hub
+                    </button>
+                    
+                    <div class="ambient-glow" id="cinemaAmbientGlow"></div>
+                    
+                    <div class="video-container" id="cinemaVideoFrame">
+                        <div id="ytCinemaPlayer"></div> 
+                    </div>
+
+                    <div class="cinema-controls-island">
+                        <button class="send-core-btn" style="width: 44px; height: 44px; font-size: 18px; box-shadow: 0 4px 10px rgba(255,42,95,0.3);" onclick="window.toggleCinemaPlayback()" id="cinemaPlayPauseBtn">▶️</button>
+                        <button class="icon-btn-pro" id="cinemaForceSyncBtn" data-tip="Force Sync" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; width: 38px; height: 38px; border-radius: 50%; display: none;" onclick="window.forceCinemaSync()">🔄</button>
+                        <div class="sync-status-badge" id="cinemaSyncStatus" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.08); padding: 6px 14px; border-radius: 20px;">
+                            <span class="pulse-dot" style="background: #0a84ff;"></span> <span style="font-size: 12px; font-weight: 600;">Watching Solo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (typeof window.initCinemaEngine === 'function') setTimeout(() => window.initCinemaEngine(), 100);
+        if (typeof window.renderCinemaPills === 'function') setTimeout(() => window.renderCinemaPills(), 150);
+    }
+    else if (viewName === 'journal') {
         box.innerHTML = `
             <div class="journal-layout" style="position: relative;">
                 <div class="canvas-container">
@@ -3587,13 +3766,7 @@ window.openCallHistory = function() {
                         <span style="font-size: 13px; font-weight: 700; color: white;">${durationStr || displayType}</span>
                         <button class="icon-btn-pro" data-tip="Delete Record" style="width: 28px; height: 28px; background: rgba(255,59,48,0.1); color: #ff3b30; border-radius: 6px;" onclick="window.deleteCallLog('${callKey}')">🗑️</button>
                     </div>
-                </div>
-            `;
-        });
-    });
-};
-
-// --- 🗑️ DELETION LOGIC ---
+                </div>`;});});};
 window.deleteCallLog = async function(callKey) {
     if (confirm("Delete this call record?")) {
         await remove(ref(rtdb, `bridges/${currentBridgeId}/callHistory/${callKey}`));
@@ -3607,3 +3780,546 @@ window.clearAllCallHistory = async function() {
         if (navigator.vibrate) navigator.vibrate([10, 20]);
     }
 };
+// ==========================================
+// 🍿 TWINVISION: THE UNIFIED SYNC MATRIX 
+// ==========================================
+
+window.ytCinemaPlayer = null;
+window.isCinemaPlayingLocally = false;
+window.cinemaDriftThreshold = 1.5; 
+window.currentCinemaMode = 'solo'; // Default to Solo until they click "Watch with Lavanya"
+window.selectedYtData = null; 
+window.isCinemaRemoteControl = false; 
+window.latestCinemaData = null;
+window.cinemaFirebaseListenerActive = false; // Prevents duplicate background listeners
+
+window.YOUTUBE_API_KEY = "AIzaSyDyU-K6yp6iNhpwF0GOfmHsnj8_qHMYhCo"; 
+
+// --- 0. HELPER FIXES ---
+window.formatTheaterLayout = function(isShort) {
+    const frame = document.getElementById('cinemaVideoFrame');
+    if (frame) {
+        if (isShort) frame.classList.add('is-short');
+        else frame.classList.remove('is-short');
+    }
+};
+
+// ==========================================
+// 📡 THE SINGLE GLOBAL BRAIN (Replaces all previous listeners)
+// ==========================================
+window.bootTwinVisionMatrix = function() {
+    if (typeof rtdb === 'undefined' || !currentBridgeId || window.cinemaFirebaseListenerActive) return;
+    window.cinemaFirebaseListenerActive = true;
+
+    const cinemaRef = ref(rtdb, `bridges/${currentBridgeId}/cinema/nowWatching`);
+    
+    onValue(cinemaRef, (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.val();
+        window.latestCinemaData = data;
+
+        // 1. Ignore if WE are the ones who pressed the button
+        if (data.lastActionBy === currentUsername) return;
+
+        // 2. 🛡️ IF WE ARE NOT IN SYNC MODE: Show the Tune-In Modal
+        if (window.currentCinemaMode !== 'sync') {
+            if (data.playbackState === 'playing') {
+                const joinModal = document.getElementById('cinemaSyncJoinModal');
+                const joinTitle = document.getElementById('cinemaSyncJoinTitle');
+                if (joinTitle) joinTitle.innerText = `${data.lastActionBy} started a Watch Party`;
+                if (joinModal) joinModal.classList.add('active');
+            }
+            return; // 🛑 Stop here. Do not touch their local video player!
+        }
+
+        // 3. 🍿 IF WE ARE IN SYNC MODE: Perfectly mimic the partner's screen
+        if (window.ytCinemaPlayer && typeof window.ytCinemaPlayer.loadVideoById === 'function') {
+            
+            window.isCinemaRemoteControl = true; // 🔒 Lock the Echo Chamber
+
+            // Did the video change?
+            const currentUrl = window.ytCinemaPlayer.getVideoUrl();
+            if (data.ytId && (!currentUrl || !currentUrl.includes(data.ytId))) {
+                window.ytCinemaPlayer.loadVideoById(data.ytId);
+                window.formatTheaterLayout(data.isShort);
+            }
+
+            // Sync Timeline Physics
+            const isPlayingRemote = data.playbackState === 'playing';
+            const timePassed = isPlayingRemote ? (Date.now() - data.actionTimestamp) / 1000 : 0;
+            const targetSeekTime = data.seekTime + timePassed;
+            const localCurrentTime = window.ytCinemaPlayer.getCurrentTime() || 0;
+            const drift = Math.abs(localCurrentTime - targetSeekTime);
+
+            if (data.isScrubbing || drift > window.cinemaDriftThreshold) {
+                window.ytCinemaPlayer.seekTo(targetSeekTime, true);
+                if (typeof window.updateCinemaSyncStatus === 'function') window.updateCinemaSyncStatus('synced');
+            }
+
+            // Sync Play/Pause
+            if (isPlayingRemote) {
+                window.ytCinemaPlayer.playVideo();
+                window.isCinemaPlayingLocally = true;
+            } else {
+                window.ytCinemaPlayer.pauseVideo();
+                window.isCinemaPlayingLocally = false;
+            }
+            
+            const btn = document.getElementById('cinemaPlayPauseBtn');
+            if(btn) btn.innerText = window.isCinemaPlayingLocally ? "⏸️" : "▶️";
+
+            // 🔓 Unlock the Echo Chamber after YouTube reacts
+            setTimeout(() => { window.isCinemaRemoteControl = false; }, 500);
+        }
+    });
+};
+
+// --- 1. LOCAL PLAYER INITIALIZATION ---
+window.initCinemaEngine = function() {
+    const safeOrigin = window.location.hostname === '' ? 'http://localhost' : window.location.origin;
+
+    if (window.YT && window.YT.Player && !window.ytCinemaPlayer) {
+        window.ytCinemaPlayer = new YT.Player('ytCinemaPlayer', {
+            height: '100%', width: '100%', 
+            host: 'https://www.youtube-nocookie.com',
+            playerVars: { 
+                'autoplay': 0, 'controls': 1, 'rel': 0, 
+                'modestbranding': 1, 'disablekb': 0, 
+                'enablejsapi': 1, 'origin': safeOrigin
+            },
+            events: {
+                'onReady': () => {
+                    console.log("🍿 TwinVision Player Ready.");
+                    // If they accepted an invite while the tab was loading, jump in immediately!
+                    if (window.currentCinemaMode === 'sync' && window.latestCinemaData) {
+                        const d = window.latestCinemaData;
+                        window.isCinemaRemoteControl = true;
+                        window.formatTheaterLayout(d.isShort);
+                        window.ytCinemaPlayer.loadVideoById(d.ytId);
+                        const timePassed = (Date.now() - d.actionTimestamp) / 1000;
+                        window.ytCinemaPlayer.seekTo(d.seekTime + timePassed, true);
+                        if (d.playbackState === 'playing') window.ytCinemaPlayer.playVideo();
+                        setTimeout(() => { window.isCinemaRemoteControl = false; }, 1000);
+                    }
+                },
+                'onStateChange': window.onCinemaStateChange,
+                'onError': (e) => {
+                    if (e.data === 150 || e.data === 101) alert("⚠️ Creator blocked embedding. Try another video!");
+                }
+            }
+        });
+    } else if (window.ytCinemaPlayer && window.ytCinemaPlayer.getIframe) {
+        document.getElementById('ytCinemaPlayer').replaceWith(window.ytCinemaPlayer.getIframe());
+    }
+};
+
+// --- 2. THE LOCAL ACTION CATCHER ---
+window.onCinemaStateChange = function(event) {
+    if (!currentBridgeId) return;
+
+    if (event.data === YT.PlayerState.PLAYING || event.data === YT.PlayerState.PAUSED) {
+        window.isCinemaPlayingLocally = (event.data === YT.PlayerState.PLAYING);
+        const btn = document.getElementById('cinemaPlayPauseBtn');
+        if (btn) btn.innerText = window.isCinemaPlayingLocally ? "⏸️" : "▶️";
+        
+        const glow = document.getElementById('cinemaAmbientGlow');
+        if (glow) {
+            if (window.isCinemaPlayingLocally) glow.classList.add('active');
+            else glow.classList.remove('active');
+        }
+
+        // 🛑 THE ECHO KILLER: Abort if Firebase pushed this button!
+        if (window.isCinemaRemoteControl) return;
+
+        // 📡 BROADCAST TO LAVANYA: Only if we are synced and WE clicked it!
+        if (window.currentCinemaMode === 'sync') {
+            update(ref(rtdb, `bridges/${currentBridgeId}/cinema/nowWatching`), {
+                playbackState: window.isCinemaPlayingLocally ? 'playing' : 'paused',
+                lastActionBy: currentUsername,
+                seekTime: window.ytCinemaPlayer.getCurrentTime(),
+                actionTimestamp: Date.now(),
+                isScrubbing: false
+            });
+        }
+    }
+    if (event.data === YT.PlayerState.BUFFERING && window.currentCinemaMode === 'sync') {
+        if(typeof window.updateCinemaSyncStatus === 'function') window.updateCinemaSyncStatus('buffering');
+    }
+};
+
+// --- 3. UI CONTROLS & CONTEXT MENUS ---
+window.openCinemaActionSheet = function(ytId, title, thumb, isShort) {
+    window.selectedYtData = { ytId, title, thumb, isShort };
+    document.getElementById('actionSheetTitle').innerText = title;
+    const thumbEl = document.getElementById('actionSheetThumb');
+    if (thumbEl) thumbEl.src = thumb; 
+    document.getElementById('cinemaActionSheet').classList.add('active');
+};
+
+window.closeCinemaActionSheet = function() {
+    const sheet = document.getElementById('cinemaActionSheet');
+    if (sheet) sheet.classList.remove('active');
+    window.selectedYtData = null;
+};
+
+window.executeCinemaAction = async function(action) {
+    if (!window.selectedYtData) return;
+    const { ytId, title, thumb, isShort } = window.selectedYtData;
+    window.closeCinemaActionSheet();
+
+    if (action === 'save') {
+        await push(ref(rtdb, `bridges/${currentBridgeId}/cinema/watchLater`), {
+            ytId, title, thumb, isShort, addedBy: currentUsername, timestamp: Date.now()
+        });
+        alert("Saved to Watch Later!");
+        return;
+    }
+
+    push(ref(rtdb, `bridges/${currentBridgeId}/cinema/history`), {
+        ytId, title, thumb, isShort, watchedBy: currentUsername, timestamp: Date.now()
+    });
+
+    document.getElementById('cinemaResultsGrid').style.display = 'none';
+    document.getElementById('cinemaTheaterStage').style.display = 'flex';
+    window.formatTheaterLayout(isShort);
+
+    window.currentCinemaMode = action; // Set our mode!
+
+    if (action === 'solo') {
+        window.updateCinemaSyncStatus('solo');
+        window.ytCinemaPlayer.loadVideoById(ytId);
+        window.ytCinemaPlayer.playVideo();
+    } else if (action === 'sync') {
+        window.updateCinemaSyncStatus('synced');
+        
+        window.ytCinemaPlayer.loadVideoById(ytId);
+        window.ytCinemaPlayer.playVideo(); 
+
+        update(ref(rtdb, `bridges/${currentBridgeId}/cinema/nowWatching`), {
+            ytId: ytId, videoTitle: title, playbackState: 'playing',
+            lastActionBy: currentUsername, seekTime: 0, actionTimestamp: Date.now(), 
+            isScrubbing: true, isShort: isShort
+        });
+    }
+};
+
+window.acceptCinemaJoin = function() {
+    const modal = document.getElementById('cinemaSyncJoinModal');
+    if (modal) modal.classList.remove('active');
+    
+    // 1. Lock into Sync mode IMMEDIATELY
+    window.currentCinemaMode = 'sync'; 
+    window.updateCinemaSyncStatus('synced');
+    
+    // 2. Force UI shift
+    if (typeof loadView === 'function') loadView('cinema');
+    
+    setTimeout(() => {
+        document.getElementById('cinemaResultsGrid').style.display = 'none';
+        document.getElementById('cinemaTheaterStage').style.display = 'flex';
+        
+        // 3. Force catch-up if player is already built
+        const d = window.latestCinemaData; 
+        if (d && window.ytCinemaPlayer && typeof window.ytCinemaPlayer.loadVideoById === 'function') {
+            window.isCinemaRemoteControl = true; 
+            window.formatTheaterLayout(d.isShort);
+            window.ytCinemaPlayer.loadVideoById(d.ytId);
+            const timePassed = (Date.now() - d.actionTimestamp) / 1000;
+            window.ytCinemaPlayer.seekTo(d.seekTime + timePassed, true);
+            if (d.playbackState === 'playing') window.ytCinemaPlayer.playVideo();
+
+            setTimeout(() => { window.isCinemaRemoteControl = false; }, 1000);
+        }
+    }, 400); // Slight delay for DOM rendering
+};
+
+window.updateCinemaSyncStatus = function(status) {
+    const badge = document.getElementById('cinemaSyncStatus');
+    const forceBtn = document.getElementById('cinemaForceSyncBtn');
+    if (!badge) return;
+    
+    if (status === 'solo') {
+        badge.innerHTML = `<span class="pulse-dot" style="background: #0a84ff;"></span> <span style="font-size: 12px; font-weight: 600;">Watching Solo</span>`;
+        badge.style.background = 'rgba(255,255,255,0.05)'; badge.style.color = 'white';
+        if(forceBtn) forceBtn.style.display = 'none';
+    } else if (status === 'synced') {
+        badge.innerHTML = `<span class="pulse-dot" style="background: #32d74b;"></span> <span style="font-size: 12px; font-weight: 600;">Synced with Lavanya</span>`;
+        badge.style.background = 'rgba(50, 215, 75, 0.15)'; badge.style.color = '#32d74b';
+        if(forceBtn) forceBtn.style.display = 'flex';
+    } else if (status === 'buffering') {
+        badge.innerHTML = `<span class="pulse-dot" style="background: #ff3b30;"></span> <span style="font-size: 12px; font-weight: 600;">Buffering (Desync)</span>`;
+        badge.style.background = 'rgba(255, 59, 48, 0.15)'; badge.style.color = '#ff3b30';
+    }
+};
+
+window.closeTheaterAndBrowse = function() {
+    if (window.ytCinemaPlayer) window.ytCinemaPlayer.pauseVideo();
+    window.currentCinemaMode = 'solo'; 
+    document.getElementById('cinemaTheaterStage').style.display = 'none';
+    document.getElementById('cinemaResultsGrid').style.display = 'grid';
+};
+
+window.toggleCinemaPlayback = function() {
+    if (!window.ytCinemaPlayer) return;
+    if (window.isCinemaPlayingLocally) window.ytCinemaPlayer.pauseVideo();
+    else window.ytCinemaPlayer.playVideo();
+};
+
+window.forceCinemaSync = function() {
+    if (!window.ytCinemaPlayer || window.currentCinemaMode !== 'sync') return;
+    update(ref(rtdb, `bridges/${currentBridgeId}/cinema/nowWatching`), {
+        playbackState: window.isCinemaPlayingLocally ? 'playing' : 'paused',
+        lastActionBy: currentUsername,
+        seekTime: window.ytCinemaPlayer.getCurrentTime(),
+        actionTimestamp: Date.now(),
+        isScrubbing: true
+    });
+    window.updateCinemaSyncStatus('synced');
+};
+
+// --- 4. DYNAMIC PILLS (HISTORY & SEARCH) ---
+window.cinemaInterests = JSON.parse(localStorage.getItem('twinVisionInterests')) || [
+    'For You', '📱 Shorts', 'Web Dev & CSS', 'IoT & Arduino Projects'
+];
+
+window.renderCinemaPills = function() {
+    const container = document.getElementById('cinemaPills');
+    if (!container) return;
+    container.innerHTML = '';
+
+    window.cinemaInterests.forEach((interest, index) => {
+        let query = interest === 'For You' ? 'Trending Web Dev and Design UI UX' : interest;
+        if (interest === '📱 Shorts') query = '#shorts trending';
+        let pillClass = index === 0 ? 'cat-pill active' : 'cat-pill';
+        if (interest === '📱 Shorts') pillClass += ' shorts';
+        container.innerHTML += `<div class="${pillClass}" onclick="window.loadCinemaFeed(this, '${query}')">${interest}</div>`;
+    });
+
+    container.innerHTML += `<div class="cat-pill action-pill" onclick="window.fetchCinemaHistory(this, 'watchLater')">🔖 Watch Later</div>`;
+    container.innerHTML += `<div class="cat-pill action-pill" onclick="window.fetchCinemaHistory(this, 'history')">🕒 History</div>`;
+    container.innerHTML += `<div class="cat-pill action-pill" onclick="window.addNewInterest()" style="border-style: dashed;">+ Add Topic</div>`;
+    
+    if (container.children[0]) window.loadCinemaFeed(container.children[0], 'Trending Web Dev and Design UI UX');
+};
+
+window.addNewInterest = function() {
+    const newTopic = prompt("Enter a new topic to follow:");
+    if (newTopic && newTopic.trim() !== '') {
+        window.cinemaInterests.push(newTopic.trim());
+        localStorage.setItem('twinVisionInterests', JSON.stringify(window.cinemaInterests));
+        window.renderCinemaPills();
+    }
+};
+
+window.loadCinemaFeed = function(pillElement, query) {
+    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+    pillElement.classList.add('active');
+    window.searchYouTubeAPI(query);
+};
+
+window.fetchCinemaHistory = function(pillElement, type) {
+    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+    pillElement.classList.add('active');
+    
+    const grid = document.getElementById('cinemaResultsGrid');
+    document.getElementById('cinemaTheaterStage').style.display = 'none';
+    grid.style.display = 'grid';
+    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: white;">Loading...</div>`;
+
+    onValue(ref(rtdb, `bridges/${currentBridgeId}/cinema/${type}`), (snap) => {
+        grid.innerHTML = ""; 
+        if (!snap.exists()) {
+            grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: var(--text-faded);">No videos found here yet.</p>`;
+            return;
+        }
+
+        let items = [];
+        snap.forEach(child => items.push(child.val()));
+        items.reverse(); 
+
+        items.forEach(item => {
+            const dateStr = new Date(item.timestamp).toLocaleDateString();
+            grid.innerHTML += `
+                <div class="yt-card" onclick="window.openCinemaActionSheet('${item.ytId}', \`${item.title.replace(/`/g, "")}\`, '${item.thumb}', ${item.isShort})">
+                    <img src="${item.thumb}" class="yt-thumb ${item.isShort ? 'is-short' : ''}">
+                    <div class="yt-info">
+                        <div class="yt-title">${item.title}</div>
+                        <div class="yt-channel">${type === 'history' ? `Watched by ${item.watchedBy} • ${dateStr}` : `Saved by ${item.addedBy}`}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }, { onlyOnce: true });
+};
+
+window.searchYouTubeAPI = async function(customQuery = null) {
+    const query = customQuery || document.getElementById('cinemaSearchInput')?.value.trim();
+    if (!query) return;
+
+    const ytMatch = query.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+    if (ytMatch && ytMatch[1]) {
+        const ytId = ytMatch[1];
+        window.openCinemaActionSheet(ytId, "Shared Video Link", `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`, false);
+        return;
+    }
+
+    const isShortsQuery = query.toLowerCase().includes('shorts');
+    const grid = document.getElementById('cinemaResultsGrid');
+    document.getElementById('cinemaTheaterStage').style.display = 'none';
+    grid.style.display = 'grid';
+    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 100px 20px; color: white;"><span class="pulse-dot" style="width: 15px; height: 15px; background: #ff2a5f; margin: 0 auto 15px auto;"></span><h3 style="font-weight: 600;">Curating Feed...</h3></div>`;
+
+    try {
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${isShortsQuery ? 20 : 12}&q=${encodeURIComponent(query)}&type=video&key=${window.YOUTUBE_API_KEY}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+        const data = await response.json();
+        
+        grid.innerHTML = ""; 
+        if (!data.items || data.items.length === 0) {
+            grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: var(--text-faded);">No videos found.</p>`;
+            return;
+        }
+
+        data.items.forEach(item => {
+            const ytId = item.id.videoId;
+            const title = item.snippet.title.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+            const channel = item.snippet.channelTitle;
+            const thumbUrl = item.snippet.thumbnails.high.url;
+
+            grid.innerHTML += `
+                <div class="yt-card" onclick="window.openCinemaActionSheet('${ytId}', \`${title.replace(/`/g, "")}\`, '${thumbUrl}', ${isShortsQuery})">
+                    <img src="${thumbUrl}" class="yt-thumb ${isShortsQuery ? 'is-short' : ''}">
+                    <div class="yt-info">
+                        <div class="yt-title">${title}</div>
+                        <div class="yt-channel">${isShortsQuery ? '📱' : '📺'} ${channel}</div>
+                    </div>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error("YouTube Search Failed:", error);
+    }
+};
+
+// ⚡ AUTO-BOOT THE MATRIX
+setTimeout(() => {
+    if (typeof window.bootTwinVisionMatrix === 'function') window.bootTwinVisionMatrix();
+}, 1500);
+
+window.forceCinemaSync = function() {
+    if (!window.ytCinemaPlayer || window.currentCinemaMode !== 'sync') return;
+    update(ref(rtdb, `bridges/${currentBridgeId}/cinema/nowWatching`), {
+        playbackState: window.isCinemaPlayingLocally ? 'playing' : 'paused',
+        lastActionBy: currentUsername,
+        seekTime: window.ytCinemaPlayer.getCurrentTime(),
+        actionTimestamp: Date.now(),
+        isScrubbing: true
+    });
+    updateCinemaSyncStatus('synced');
+};
+window.formatTheaterLayout = function(isShort) {
+    const frame = document.getElementById('cinemaVideoFrame');
+    if (frame) {
+        if (isShort) frame.classList.add('is-short');
+        else frame.classList.remove('is-short');
+    }
+};// ==========================================
+// 🌟 GLOBAL CENTERED CONTEXT MENU 
+// ==========================================
+// ==========================================
+// 🌟 GLOBAL CINEMA MODALS (ACTION SHEET & TUNE-IN)
+// ==========================================
+function initGlobalCinemaModals() {
+    if (!document.getElementById('cinemaActionSheet')) {
+        const modalsContainer = document.createElement('div');
+        modalsContainer.innerHTML = `
+            <style>
+                .action-sheet-overlay {
+                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.7); backdrop-filter: blur(20px) saturate(150%); -webkit-backdrop-filter: blur(20px) saturate(150%);
+                    z-index: 9999999; display: flex; justify-content: center; align-items: center;
+                    opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s;
+                }
+                .action-sheet-overlay.active { opacity: 1; visibility: visible; }
+                
+                .premium-context-menu {
+                    background: rgba(18, 18, 22, 0.85); width: 90%; max-width: 340px;
+                    border-radius: 24px; overflow: hidden;
+                    transform: scale(0.9) translateY(20px); opacity: 0; 
+                    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    border: 1px solid rgba(255,255,255,0.1); 
+                    box-shadow: 0 40px 80px rgba(0,0,0,1), inset 0 1px 0 rgba(255,255,255,0.15);
+                    display: flex; flex-direction: column; position: relative;
+                }
+                .action-sheet-overlay.active .premium-context-menu { transform: scale(1) translateY(0); opacity: 1; }
+                
+                .context-header { position: relative; height: 140px; width: 100%; overflow: hidden; }
+                .context-thumb-bg { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.5) blur(3px); transform: scale(1.1); transition: all 0.5s ease; }
+                .context-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px 15px 15px 15px; background: linear-gradient(to top, rgba(18, 18, 22, 1) 0%, rgba(18, 18, 22, 0.6) 60%, transparent 100%); box-sizing: border-box; }
+                .context-title { color: white; font-size: 15px; font-weight: 600; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+                
+                .context-close-btn { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; color: white; font-size: 12px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; backdrop-filter: blur(10px); }
+                .context-close-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+                
+                .context-actions { padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+                .ctx-btn { width: 100%; padding: 14px 16px; background: transparent; border: none; color: #E8E8ED; font-size: 15px; font-weight: 500; border-radius: 14px; font-family: inherit; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: flex-start; gap: 14px; }
+                .ctx-btn:hover { background: rgba(255,255,255,0.06); color: white; }
+                .ctx-btn svg { width: 20px; height: 20px; opacity: 0.7; transition: opacity 0.2s; }
+                .ctx-btn:hover svg { opacity: 1; }
+                
+                .ctx-btn.sync-primary { color: white; background: rgba(255,42,95,0.1); }
+                .ctx-btn.sync-primary svg { color: #ff2a5f; opacity: 1; }
+                .ctx-btn.sync-primary:hover { background: rgba(255,42,95,0.2); }
+            </style>
+            
+            <div id="cinemaActionSheet" class="action-sheet-overlay" onclick="window.closeCinemaActionSheet()">
+                <div class="premium-context-menu" onclick="event.stopPropagation()">
+                    <div class="context-header">
+                        <img id="actionSheetThumb" src="" class="context-thumb-bg">
+                        <div class="context-overlay">
+                            <h4 id="actionSheetTitle" class="context-title"></h4>
+                        </div>
+                        <button class="context-close-btn" onclick="window.closeCinemaActionSheet()">✕</button>
+                    </div>
+                    <div class="context-actions">
+                        <button class="ctx-btn sync-primary" onclick="window.executeCinemaAction('sync')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            Watch with Lavanya
+                        </button>
+                        <button class="ctx-btn" onclick="window.executeCinemaAction('solo')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            Watch Solo
+                        </button>
+                        <button class="ctx-btn" onclick="window.executeCinemaAction('save')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                            Save for Later
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cinemaSyncJoinModal" class="action-sheet-overlay" onclick="window.closeSyncJoinModal()">
+                <div class="premium-context-menu" style="text-align: center; padding: 40px 30px; align-items: center;" onclick="event.stopPropagation()">
+                    <div style="font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 10px 20px rgba(255,42,95,0.4));">🍿</div>
+                    <h3 id="cinemaSyncJoinTitle" style="margin-top:0; margin-bottom: 10px; color: white; font-weight: 700; font-size: 18px; line-height: 1.3;">Lavanya is at the Cinema</h3>
+                    <p style="color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 30px; line-height: 1.5;">Do you want to tune in and watch together?</p>
+                    <div style="display: flex; gap: 12px; width: 100%;">
+                        <button class="ctx-btn sync-primary" style="flex: 1; justify-content: center; font-weight: 600; border-radius: 12px;" onclick="window.acceptCinemaJoin()">Tune In</button>
+                        <button class="ctx-btn" style="flex: 1; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 12px;" onclick="window.closeSyncJoinModal()">Later</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalsContainer);
+    }
+}
+
+// Logic to let user dismiss the tune-in modal
+window.closeSyncJoinModal = function() {
+    const modal = document.getElementById('cinemaSyncJoinModal');
+    if (modal) modal.classList.remove('active');
+};
+
+// Boot them immediately
+initGlobalCinemaModals();

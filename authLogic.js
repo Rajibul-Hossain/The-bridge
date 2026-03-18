@@ -4,19 +4,15 @@ import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10
 const loginHTML = `
     <h2 class="auth-title">Welcome Back</h2>
     <p class="auth-subtitle">Verify your credentials.</p>
-    
     <div class="input-group">
         <input type="text" id="username" class="smooth-input" placeholder=" ">
         <label class="floating-label">Username</label>
     </div>
-
     <div class="input-group">
         <input type="password" id="password" class="smooth-input" placeholder=" ">
         <label class="floating-label">Password</label>
     </div>
-    
     <button class="spring-btn" id="loginBtn" onclick="attemptLogin()">Connect Now</button>
-    
     <p class="switch-text">
         First time here? <span class="switch-link" onclick="loadRegister()">Create account</span>
     </p>
@@ -25,61 +21,46 @@ const loginHTML = `
 const registerHTML = `
     <h2 class="auth-title">Create Profile</h2>
     <p class="auth-subtitle">Establish a secure node.</p>
-    
     <div class="input-group">
         <input type="text" id="regUsername" class="smooth-input" placeholder=" ">
         <label class="floating-label">Username</label>
     </div>
-
     <div class="input-group">
         <input type="password" id="regPassword" class="smooth-input" placeholder=" ">
         <label class="floating-label">Password</label>
     </div>
-
     <div class="input-group">
         <input type="password" id="regPasswordConfirm" class="smooth-input" placeholder=" ">
         <label class="floating-label">Confirm Password</label>
     </div>
-    
     <button class="spring-btn" id="registerBtn" onclick="attemptRegister()">Create Account</button>
-    
     <p class="switch-text">
         Already registered? <span class="switch-link" onclick="loadLogin()">Return to Login</span>
-    </p>
-`;
-
+    </p>`;
 window.loadLogin = function() {
     let authBox = document.getElementById('authContainer');
     if(authBox) {
         authBox.innerHTML = loginHTML;
         authBox.style.animation = 'none';
         authBox.offsetHeight; 
-        authBox.style.animation = null; 
-    }
-}
-
+        authBox.style.animation = null; }}
 window.loadRegister = function() {
     let authBox = document.getElementById('authContainer');
     if(authBox) {
         authBox.innerHTML = registerHTML;
         authBox.style.animation = 'none';
         authBox.offsetHeight; 
-        authBox.style.animation = null; 
-    }
-}
-window.loadLogin();
-let authentication, database;
-
+        authBox.style.animation = null; }}
+window.loadLogin();let authentication, database;
 try {
-const firebaseConfig = {
+  const firebaseConfig = {
   apiKey: "AIzaSyDEbvPzoahjdt0w5s2SF7Usn3ZnOxF2v38",
   authDomain: "ever-us.firebaseapp.com",
   projectId: "ever-us",
   storageBucket: "ever-us.firebasestorage.app",
   messagingSenderId: "925623567345",
   appId: "1:925623567345:web:10c9d1e5873a4df7983a50",
-  measurementId: "G-6E4K45TWLV"
-};
+  measurementId: "G-6E4K45TWLV"};
     const app = initializeApp(firebaseConfig);
     authentication = getAuth(app);
     database = getFirestore(app);
@@ -97,10 +78,8 @@ window.attemptRegister = async function() {
 
     if (typedUser === "" || pass1 === "") return alert("Please fill in all fields.");
     if (pass1 !== pass2) return alert("Your passwords do not match.");
-
     btn.innerText = "Creating secure profile...";
     let fakeEmail = typedUser + "@thebridge.app";
-
     try {
         // 1. Create the user (This automatically logs them in behind the scenes)
         const userCredential = await createUserWithEmailAndPassword(authentication, fakeEmail, pass1);
