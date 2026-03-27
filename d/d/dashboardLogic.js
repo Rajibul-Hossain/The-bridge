@@ -1235,6 +1235,12 @@ if (viewName === 'messages') {
         <button class="icon-btn-pro" data-tip="Start Audio Call" style="background:transparent; color:white;" onclick="window.startAudioCall()">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
         </button>
+        <button class="icon-btn-pro" data-tip="Video Call" style="background: rgba(10, 132, 255, 0.15); color: #0a84ff; border: 1px solid rgba(10, 132, 255, 0.3); width: 42px; height: 42px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease;" onclick="window.startIGCall()" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 5px 15px rgba(10, 132, 255, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+        <polygon points="23 7 16 12 23 17 23 7"></polygon>
+        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+    </svg>
+</button>
     </div>
                 </div>
 
@@ -3640,159 +3646,98 @@ window.toggleCallRecording = function() {
     indicator.style.display = 'block';
 };
 
-// --- 🚪 HANGUP & NETWORK TERMINATION ---
 window.hangUpCall = function() {
-    terminateCallNetwork();
-};
-
-function handleRemoteHangup() {
-    terminateCallNetwork();
-}
-
+    terminateCallNetwork();};
+function handleRemoteHangup() {terminateCallNetwork();}
 function terminateCallNetwork() {
     clearInterval(window.callTimerInterval);
     if (window.isRecordingCall) window.toggleCallRecording(); 
-    
-    // ⚡ THE FIX: IF THE CALL CONNECTED, UPDATE THE DURATION IN THE DB
     if (window.currentCallId && window.callDurationSeconds > 0) {
         update(ref(rtdb, `bridges/${currentBridgeId}/callHistory/${window.currentCallId}`), {
-            duration: window.callDurationSeconds
-        });
-    }
-    
+            duration: window.callDurationSeconds});}
     if (window.peerConnection) window.peerConnection.close();
     if (window.localStream) window.localStream.getTracks().forEach(track => track.stop());
-    
     if (typeof rtdb !== 'undefined' && currentBridgeId) remove(ref(rtdb, `bridges/${currentBridgeId}/call`));
-    resetCallUI();
-}
-// ⚡ FIX: PERSPECTIVE-BASED HISTORY LOGGING
+    resetCallUI();}
 function logCallHistory() {
-    // If we don't know who started it or the call ID, abort.
     if (!currentBridgeId || !window.currentCallId || !window.callInitiator) return;
-    
     const duration = window.callDurationSeconds || 0;
-    
-    // We use the unique Call ID as the database key. 
-    // This prevents duplicate logs if both users hang up at the same exact time!
     const historyRef = ref(rtdb, `bridges/${currentBridgeId}/callHistory/${window.currentCallId}`);
-    
     set(historyRef, {
-        caller: window.callInitiator, // We strictly save WHO made the call
+        caller: window.callInitiator, 
         duration: duration,
-        timestamp: window.callStartTime || Date.now()
-    });
-}
-
+        timestamp: window.callStartTime || Date.now()});}
 function showCallUI(statusText, isIncoming, callerName) {
     const overlay = document.getElementById('activeCallOverlay');
     document.getElementById('callStatusText').innerText = statusText;
     document.getElementById('callPartnerName').innerText = callerName || partnerUsername;
     document.getElementById('answerCallBtn').style.display = isIncoming ? 'block' : 'none';
-    
     overlay.style.display = 'flex';
-    setTimeout(() => overlay.style.opacity = '1', 10);
-}
-
+    setTimeout(() => overlay.style.opacity = '1', 10);}
 function resetCallUI() {
     const overlay = document.getElementById('activeCallOverlay');
     overlay.style.opacity = '0';
     setTimeout(() => overlay.style.display = 'none', 400);
-    
     document.getElementById('muteCallBtn').style.display = 'none';
     document.getElementById('recordCallBtn').style.display = 'none';
     document.getElementById('callTimerDisplay').style.display = 'none';
     document.getElementById('callTimerDisplay').innerText = "00:00";
-    
     window.isCallActive = false;
     window.peerConnection = null;
     window.localStream = null;
     window.remoteStream = null;
     window.isCallMuted = false;
-    window.callDurationSeconds = 0;
-}
+    window.callDurationSeconds = 0;}
 window.openCallHistory = function() {
     document.getElementById('callHistoryModal').classList.add('active');
     const list = document.getElementById('callHistoryList');
     list.innerHTML = `<p style="text-align:center; color: var(--text-faded);">Loading logs...</p>`;
-
-    // Keep an active listener so the UI updates instantly if you delete something
     onValue(ref(rtdb, `bridges/${currentBridgeId}/callHistory`), (snapshot) => {
         if (!snapshot.exists()) {
             list.innerHTML = `<div style="text-align:center; padding: 30px; color: var(--text-faded);">
                                 <span style="font-size: 30px; display:block; margin-bottom: 10px;">📭</span>
                                 No past calls found.
                               </div>`;
-            return;
-        }
-
-        // Convert object to array and keep the DB keys for deletion
+            return;}
         const historyArray = Object.entries(snapshot.val()).sort((a,b) => b[1].timestamp - a[1].timestamp);
         list.innerHTML = "";
-
         historyArray.forEach(([callKey, call]) => {
             const timeStr = new Date(call.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             const mins = Math.floor(call.duration / 60);
             const secs = call.duration % 60;
             const durationStr = call.duration > 0 ? `${mins}m ${secs}s` : "";
-            
             const isMeCaller = call.caller === currentUsername;
-            
             let icon = ""; let color = ""; let displayType = "";
-
-            // ⚡ THE FIX: PERFECT MISSED/CANCELED LOGIC
             if (call.duration === 0) {
-                if (isMeCaller) {
-                    displayType = "Canceled"; icon = "🚫"; color = "rgba(255,255,255,0.5)";
-                } else {
-                    displayType = "Missed"; icon = "❌"; color = "#ff3b30";
-                }
-            } else if (isMeCaller) {
-                displayType = "Outgoing"; icon = "↗️"; color = "#0a84ff";
-            } else {
-                displayType = "Incoming"; icon = "↙️"; color = "#32d74b";
-            }
-
-            list.innerHTML += `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 12px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;">
+            if (isMeCaller) {displayType = "Canceled"; icon = "🚫"; color = "rgba(255,255,255,0.5)";
+            } else {displayType = "Missed"; icon = "❌"; color = "#ff3b30";}
+            } else if (isMeCaller) {displayType = "Outgoing"; icon = "↗️"; color = "#0a84ff";} 
+            else {displayType = "Incoming"; icon = "↙️"; color = "#32d74b";}
+            list.innerHTML += `<div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 12px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <span style="font-size: 20px;">${icon}</span>
-                        <div>
-                            <div style="font-size: 14px; font-weight: 600; color: ${color};">${displayType} Call</div>
-                            <div style="font-size: 11px; color: var(--text-faded);">${timeStr}</div>
-                        </div>
-                    </div>
+                        <div><div style="font-size: 14px; font-weight: 600; color: ${color};">${displayType} Call</div>
+                            <div style="font-size: 11px; color: var(--text-faded);">${timeStr}</div></div></div>
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <span style="font-size: 13px; font-weight: 700; color: white;">${durationStr || displayType}</span>
                         <button class="icon-btn-pro" data-tip="Delete Record" style="width: 28px; height: 28px; background: rgba(255,59,48,0.1); color: #ff3b30; border-radius: 6px;" onclick="window.deleteCallLog('${callKey}')">🗑️</button>
-                    </div>
-                </div>`;});});};
+                    </div></div>`;});});};
 window.deleteCallLog = async function(callKey) {
     if (confirm("Delete this call record?")) {
         await remove(ref(rtdb, `bridges/${currentBridgeId}/callHistory/${callKey}`));
-        if (navigator.vibrate) navigator.vibrate(10);
-    }
-};
-
+        if (navigator.vibrate) navigator.vibrate(10);}};
 window.clearAllCallHistory = async function() {
     if (confirm("Are you sure you want to permanently clear the entire call history?")) {
         await remove(ref(rtdb, `bridges/${currentBridgeId}/callHistory`));
-        if (navigator.vibrate) navigator.vibrate([10, 20]);
-    }
-};
-// ==========================================
-// 🍿 TWINVISION: THE UNIFIED SYNC MATRIX 
-// ==========================================
-
+        if (navigator.vibrate) navigator.vibrate([10, 20]);}};
 window.ytCinemaPlayer = null;
 window.isCinemaPlayingLocally = false;
 window.cinemaDriftThreshold = 1.5; 
-window.currentCinemaMode = 'solo'; // Default to Solo until they click "Watch with Lavanya"
+window.currentCinemaMode = 'solo'; 
 window.selectedYtData = null; 
 window.isCinemaRemoteControl = false; 
 window.latestCinemaData = null;
-window.cinemaFirebaseListenerActive = false; // Prevents duplicate background listeners
-
+window.cinemaFirebaseListenerActive = false; 
 window.YOUTUBE_API_KEY = "AIzaSyDyU-K6yp6iNhpwF0GOfmHsnj8_qHMYhCo"; 
 
 // --- 0. HELPER FIXES ---
@@ -4043,7 +3988,7 @@ window.updateCinemaSyncStatus = function(status) {
         badge.style.background = 'rgba(255,255,255,0.05)'; badge.style.color = 'white';
         if(forceBtn) forceBtn.style.display = 'none';
     } else if (status === 'synced') {
-        badge.innerHTML = `<span class="pulse-dot" style="background: #32d74b;"></span> <span style="font-size: 12px; font-weight: 600;">Synced with Lavanya</span>`;
+        badge.innerHTML = `<span class="pulse-dot" style="background: #32d74b;"></span> <span style="font-size: 12px; font-weight: 600;">Synced </span>`;
         badge.style.background = 'rgba(50, 215, 75, 0.15)'; badge.style.color = '#32d74b';
         if(forceBtn) forceBtn.style.display = 'flex';
     } else if (status === 'buffering') {
@@ -4285,7 +4230,7 @@ function initGlobalCinemaModals() {
                     <div class="context-actions">
                         <button class="ctx-btn sync-primary" onclick="window.executeCinemaAction('sync')">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                            Watch with Lavanya
+                            Watch together
                         </button>
                         <button class="ctx-btn" onclick="window.executeCinemaAction('solo')">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -4302,7 +4247,7 @@ function initGlobalCinemaModals() {
             <div id="cinemaSyncJoinModal" class="action-sheet-overlay" onclick="window.closeSyncJoinModal()">
                 <div class="premium-context-menu" style="text-align: center; padding: 40px 30px; align-items: center;" onclick="event.stopPropagation()">
                     <div style="font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 10px 20px rgba(255,42,95,0.4));">🍿</div>
-                    <h3 id="cinemaSyncJoinTitle" style="margin-top:0; margin-bottom: 10px; color: white; font-weight: 700; font-size: 18px; line-height: 1.3;">Lavanya is at the Cinema</h3>
+                    <h3 id="cinemaSyncJoinTitle" style="margin-top:0; margin-bottom: 10px; color: white; font-weight: 700; font-size: 18px; line-height: 1.3;">.. is at the Cinema</h3>
                     <p style="color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 30px; line-height: 1.5;">Do you want to tune in and watch together?</p>
                     <div style="display: flex; gap: 12px; width: 100%;">
                         <button class="ctx-btn sync-primary" style="flex: 1; justify-content: center; font-weight: 600; border-radius: 12px;" onclick="window.acceptCinemaJoin()">Tune In</button>
@@ -4323,3 +4268,366 @@ window.closeSyncJoinModal = function() {
 
 // Boot them immediately
 initGlobalCinemaModals();
+// ==========================================
+// 📸 TWINCALL V2: INSTAGRAM-TIER WEBRTC ENGINE
+// ==========================================
+
+window.igPeerConnection = null;
+window.igLocalStream = null;
+window.igRemoteStream = null;
+window.isCallActive = false;
+window.igListenerActive = false;
+
+const rtcConfig = {
+    iceServers: [
+        { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
+    ]
+};
+
+// --- 1. THE UI INJECTOR (FULL SCREEN IG STYLE) ---
+window.initIGCallUI = function() {
+    if (!document.getElementById('igCallScreen')) {
+        const uiContainer = document.createElement('div');
+        uiContainer.innerHTML = `
+            <style>
+                /* 💎 FULL SCREEN CALL UI (Premium One UI 9 / iOS Level) */
+                .ig-call-overlay {
+                    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                    background: #030305; z-index: 999999999; display: none; flex-direction: column;
+                    font-family: 'Poppins', sans-serif; opacity: 0; transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+                }
+                .ig-call-overlay.active { display: flex; opacity: 1; }
+                
+                .ig-video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+                .ig-remote-video { width: 100%; height: 100%; object-fit: cover; background: #0a0a0c; }
+                
+                .ig-local-video-wrapper {
+                    position: absolute; top: 50px; right: 20px; width: 120px; height: 180px;
+                    border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+                    border: 1px solid rgba(255,255,255,0.15); z-index: 10; background: #111;
+                    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+                .ig-local-video-wrapper:hover { transform: scale(1.03); }
+                .ig-local-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+                /* 💎 GRADIENT SHADOWS & INFO */
+                .ig-top-gradient {
+                    position: absolute; top: 0; left: 0; width: 100%; height: 180px;
+                    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); z-index: 5; pointer-events: none;
+                }
+                .ig-bottom-gradient {
+                    position: absolute; bottom: 0; left: 0; width: 100%; height: 250px;
+                    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); z-index: 5; pointer-events: none;
+                }
+                
+                .ig-call-info {
+                    position: absolute; top: 50px; left: 25px; z-index: 10; color: white;
+                }
+                .ig-call-name { font-size: 26px; font-weight: 600; margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.5); letter-spacing: -0.5px; }
+                .ig-call-status { font-size: 15px; color: rgba(255,255,255,0.7); margin: 2px 0 0 0; font-weight: 500; }
+
+                /* 💎 CONTROLS BAR */
+                .ig-controls {
+                    position: absolute; bottom: 50px; left: 0; width: 100%;
+                    display: flex; justify-content: center; align-items: center; gap: 30px; z-index: 10;
+                }
+                .ig-btn {
+                    width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1);
+                    display: flex; justify-content: center; align-items: center; font-size: 22px;
+                    cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); color: white;
+                    background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+                }
+                .ig-btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+                .ig-btn.end { background: #ff3b30; border: none; box-shadow: 0 10px 20px rgba(255,59,48,0.3); }
+                .ig-btn.end:hover { background: #ff453a; box-shadow: 0 15px 30px rgba(255,59,48,0.5); }
+                .ig-btn.muted { background: white; color: black; }
+
+                /* 🔔 INCOMING CALL MODAL */
+                .ig-incoming-modal {
+                    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                    background: rgba(10, 10, 14, 0.95); backdrop-filter: blur(30px); z-index: 999999999; display: none;
+                    flex-direction: column; justify-content: center; align-items: center;
+                    font-family: 'Poppins', sans-serif; opacity: 0; transition: opacity 0.4s ease;
+                }
+                .ig-incoming-modal.active { display: flex; opacity: 1; }
+                
+                .ig-incoming-avatar {
+                    width: 130px; height: 130px; border-radius: 50%; background: linear-gradient(135deg, #0a84ff, #ff2a5f);
+                    display: flex; justify-content: center; align-items: center; font-size: 55px; color: white;
+                    margin-bottom: 25px; animation: pulseAvatar 2s infinite alternate; box-shadow: 0 20px 40px rgba(10,132,255,0.3);
+                }
+                @keyframes pulseAvatar { 0% { transform: scale(1); } 100% { transform: scale(1.08); box-shadow: 0 25px 60px rgba(255,42,95,0.5); } }
+                
+                .ig-incoming-name { color: white; font-size: 32px; font-weight: 700; margin: 0 0 8px 0; letter-spacing: -0.5px; }
+                .ig-incoming-text { color: rgba(255,255,255,0.5); font-size: 16px; margin: 0 0 60px 0; font-weight: 500; }
+                
+                .ig-incoming-actions { display: flex; gap: 50px; }
+                .ig-action-btn {
+                    width: 75px; height: 75px; border-radius: 50%; border: none; cursor: pointer;
+                    display: flex; justify-content: center; align-items: center; font-size: 32px; color: white;
+                    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+                .ig-action-btn.decline { background: #ff3b30; box-shadow: 0 15px 30px rgba(255,59,48,0.3); }
+                .ig-action-btn.accept { background: #32d74b; box-shadow: 0 15px 30px rgba(50,215,75,0.3); animation: bounceAccept 2s infinite; }
+                .ig-action-btn:hover { transform: translateY(-8px) scale(1.05); }
+                @keyframes bounceAccept { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-12px); } 60% { transform: translateY(-6px); } }
+            </style>
+
+            <div id="igCallScreen" class="ig-call-overlay">
+                <div class="ig-video-container">
+                    <video id="igRemoteVideo" class="ig-remote-video" autoplay playsinline></video>
+                </div>
+                <div class="ig-local-video-wrapper">
+                    <video id="igLocalVideo" class="ig-local-video" autoplay playsinline muted></video>
+                </div>
+                <div class="ig-top-gradient"></div>
+                <div class="ig-bottom-gradient"></div>
+                <div class="ig-call-info">
+                    <h2 id="igCallName" class="ig-call-name">LOML</h2>
+                    <p id="igCallStatus" class="ig-call-status">Connecting...</p>
+                </div>
+                <div class="ig-controls">
+                    <button class="ig-btn" id="igToggleMic" onclick="window.toggleIGMic()">🎤</button>
+                    <button class="ig-btn" id="igToggleCam" onclick="window.toggleIGCam()">📹</button>
+                    <button class="ig-btn end" onclick="window.endIGCall(true)">📞</button>
+                </div>
+            </div>
+
+            <div id="igIncomingScreen" class="ig-incoming-modal">
+                <div class="ig-incoming-avatar">📹</div>
+                <h2 id="igCallerName" class="ig-incoming-name">LoML</h2>
+                <p class="ig-incoming-text">TwinCall Video & Audio</p>
+                <div class="ig-incoming-actions">
+                    <button class="ig-action-btn decline" onclick="window.endIGCall(true)">✕</button>
+                    <button class="ig-action-btn accept" onclick="window.acceptIGCall()">📞</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(uiContainer);
+    }
+};
+
+// --- 2. THE HARDWARE ENGINE ---
+window.startIGCamera = async function() {
+    try {
+        if (!navigator.mediaDevices) throw new Error("HTTPS required for camera access.");
+        window.igLocalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        
+        const localVid = document.getElementById('igLocalVideo');
+        if (localVid) localVid.srcObject = window.igLocalStream;
+        
+        document.getElementById('igCallScreen').classList.add('active');
+        window.isCallActive = true;
+        console.log("📸 Local Camera Active.");
+    } catch (e) {
+        console.error("Camera Error:", e);
+        alert("⚠️ Camera Access Denied. You MUST test this on localhost or a secure HTTPS domain.");
+        throw e;
+    }
+};
+
+window.toggleIGMic = function() {
+    if (!window.igLocalStream) return;
+    const track = window.igLocalStream.getAudioTracks()[0];
+    if (track) {
+        track.enabled = !track.enabled;
+        const btn = document.getElementById('igToggleMic');
+        btn.classList.toggle('muted', !track.enabled);
+        btn.innerText = track.enabled ? "🎤" : "🔇";
+    }
+};
+
+window.toggleIGCam = function() {
+    if (!window.igLocalStream) return;
+    const track = window.igLocalStream.getVideoTracks()[0];
+    if (track) {
+        track.enabled = !track.enabled;
+        const btn = document.getElementById('igToggleCam');
+        btn.classList.toggle('muted', !track.enabled);
+        btn.innerText = track.enabled ? "📹" : "🚫";
+    }
+};
+
+// --- 3. THE FIREBASE SWITCHBOARD ---
+window.bootIGSwitchboard = async function() {
+    if (window.igListenerActive || typeof rtdb === 'undefined' || !currentBridgeId) return;
+    window.igListenerActive = true;
+    
+    console.log("📡 Booting WebRTC Switchboard...");
+    const callRef = ref(rtdb, `bridges/${currentBridgeId}/videoCall`);
+
+    // 🧹 Safe Sweeper: Clear our own stale calls
+    try {
+        const snap = await get(callRef);
+        if (snap.exists() && snap.val().status === 'ringing' && snap.val().caller === currentUsername) {
+            await remove(callRef);
+            console.log("🧹 Cleared stale outgoing call.");
+        }
+    } catch(e) { console.error("Sweeper error:", e); }
+
+    // 📡 Background Listener
+    onValue(callRef, async (snap) => {
+        const incomingScreen = document.getElementById('igIncomingScreen');
+        
+        if (!snap.exists()) {
+            if (window.isCallActive) {
+                console.log("☎️ Partner hung up.");
+                window.endIGCall(false);
+            }
+            if (incomingScreen) incomingScreen.classList.remove('active');
+            return;
+        }
+
+        const data = snap.val();
+
+        // 🔔 Incoming Call
+        if (data.status === 'ringing' && data.caller !== currentUsername && !window.isCallActive) {
+            console.log("🔔 Ringing! Call from:", data.caller);
+            document.getElementById('igCallerName').innerText = data.caller;
+            if (incomingScreen) incomingScreen.classList.add('active');
+        }
+
+        // 🤝 Partner Answered Our Call
+        if (data.status === 'connected' && data.answer && data.caller === currentUsername) {
+            console.log("🤝 Partner accepted the call!");
+            document.getElementById('igCallStatus').innerText = "Connected";
+            
+            if (window.igPeerConnection && !window.igPeerConnection.currentRemoteDescription) {
+                try {
+                    await window.igPeerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    console.log("✅ WebRTC Remote Description Set.");
+                } catch (e) { console.error("Error setting answer:", e); }
+            }
+        }
+    });
+};
+
+// --- 4. STARTING A CALL (You -> Lavanya) ---
+window.startIGCall = async function() {
+    console.log("📞 Initiating call...");
+    await window.startIGCamera();
+    
+    document.getElementById('igCallName').innerText = "LOML";
+    document.getElementById('igCallStatus').innerText = "Ringing...";
+
+    window.igPeerConnection = new RTCPeerConnection(rtcConfig);
+    window.igRemoteStream = new MediaStream();
+    document.getElementById('igRemoteVideo').srcObject = window.igRemoteStream;
+
+    // Add local tracks to WebRTC
+    window.igLocalStream.getTracks().forEach(t => window.igPeerConnection.addTrack(t, window.igLocalStream));
+
+    // Catch remote tracks
+    window.igPeerConnection.ontrack = (e) => {
+        console.log("🎥 Received remote video track!");
+        e.streams[0].getTracks().forEach(t => window.igRemoteStream.addTrack(t));
+    };
+
+    // Gather network routes (ICE Candidates)
+    window.igPeerConnection.onicecandidate = (e) => {
+        if (e.candidate) {
+            push(ref(rtdb, `bridges/${currentBridgeId}/videoCall/callerIce`), e.candidate.toJSON());
+        }
+    };
+
+    // Create & Send Offer
+    const offer = await window.igPeerConnection.createOffer();
+    await window.igPeerConnection.setLocalDescription(offer);
+
+    await set(ref(rtdb, `bridges/${currentBridgeId}/videoCall`), {
+        caller: currentUsername,
+        status: 'ringing',
+        offer: { type: offer.type, sdp: offer.sdp }
+    });
+
+    // Listen for Lavanya's network routes
+    onChildAdded(ref(rtdb, `bridges/${currentBridgeId}/videoCall/receiverIce`), (snap) => {
+        if (snap.exists() && window.igPeerConnection) {
+            window.igPeerConnection.addIceCandidate(new RTCIceCandidate(snap.val())).catch(e => console.error(e));
+        }
+    });
+};
+
+// --- 5. ANSWERING A CALL (Lavanya -> You) ---
+window.acceptIGCall = async function() {
+    console.log("✅ Accepting call...");
+    document.getElementById('igIncomingScreen').classList.remove('active');
+    await window.startIGCamera();
+    
+    const callSnap = await get(ref(rtdb, `bridges/${currentBridgeId}/videoCall`));
+    if (!callSnap.exists()) return;
+    const callData = callSnap.val();
+
+    document.getElementById('igCallName').innerText = callData.caller;
+    document.getElementById('igCallStatus').innerText = "Connected";
+
+    window.igPeerConnection = new RTCPeerConnection(rtcConfig);
+    window.igRemoteStream = new MediaStream();
+    document.getElementById('igRemoteVideo').srcObject = window.igRemoteStream;
+
+    window.igLocalStream.getTracks().forEach(t => window.igPeerConnection.addTrack(t, window.igLocalStream));
+
+    window.igPeerConnection.ontrack = (e) => {
+        console.log("🎥 Received remote video track!");
+        e.streams[0].getTracks().forEach(t => window.igRemoteStream.addTrack(t));
+    };
+
+    window.igPeerConnection.onicecandidate = (e) => {
+        if (e.candidate) {
+            push(ref(rtdb, `bridges/${currentBridgeId}/videoCall/receiverIce`), e.candidate.toJSON());
+        }
+    };
+
+    // Accept Offer & Send Answer
+    await window.igPeerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
+    const answer = await window.igPeerConnection.createAnswer();
+    await window.igPeerConnection.setLocalDescription(answer);
+
+    await update(ref(rtdb, `bridges/${currentBridgeId}/videoCall`), {
+        status: 'connected',
+        answer: { type: answer.type, sdp: answer.sdp }
+    });
+
+    // Listen for Caller's network routes
+    onChildAdded(ref(rtdb, `bridges/${currentBridgeId}/videoCall/callerIce`), (snap) => {
+        if (snap.exists() && window.igPeerConnection) {
+            window.igPeerConnection.addIceCandidate(new RTCIceCandidate(snap.val())).catch(e => console.error(e));
+        }
+    });
+};
+
+// --- 6. HANG UP ---
+window.endIGCall = async function(broadcast = true) {
+    console.log("🛑 Ending call...");
+    window.isCallActive = false;
+    
+    if (window.igLocalStream) {
+        window.igLocalStream.getTracks().forEach(t => t.stop());
+        window.igLocalStream = null;
+    }
+    if (window.igPeerConnection) {
+        window.igPeerConnection.close();
+        window.igPeerConnection = null;
+    }
+    
+    document.getElementById('igCallScreen').classList.remove('active');
+    document.getElementById('igIncomingScreen').classList.remove('active');
+    
+    if (document.getElementById('igLocalVideo')) document.getElementById('igLocalVideo').srcObject = null;
+    if (document.getElementById('igRemoteVideo')) document.getElementById('igRemoteVideo').srcObject = null;
+
+    if (broadcast && currentBridgeId) {
+        try { await remove(ref(rtdb, `bridges/${currentBridgeId}/videoCall`)); } catch(e){}
+    }
+};
+
+// ⚡ AUTO BOOTLOADER
+window.initIGCallUI(); // Inject the UI into the DOM
+
+// Poll until the user is logged in, then boot the background listener
+const bootIGInterval = setInterval(() => {
+    if (typeof currentBridgeId !== 'undefined' && currentBridgeId !== null) {
+        if (typeof window.bootIGSwitchboard === 'function') window.bootIGSwitchboard();
+        clearInterval(bootIGInterval);
+    }
+}, 1000);

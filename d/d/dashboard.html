@@ -9,6 +9,60 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/quill-cursors@3.1.0/dist/quill-cursors.css" rel="stylesheet">
+    <style>
+html, body {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased; 
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none; 
+    -webkit-tap-highlight-color: transparent; 
+    touch-action: manipulation;
+    margin: 0; 
+    padding: 0;
+}
+
+/* 2. iOS Native Momentum Scrolling */
+* {
+    /* Gives that buttery, heavy scroll feeling on iPhones */
+    -webkit-overflow-scrolling: touch; 
+}
+
+/* 3. Force GPU Acceleration on everything that moves */
+button, .yt-card, .cat-pill, .pip-container, .action-sheet {
+    /* This physically forces the browser to give the element its own GPU layer */
+    transform: translate3d(0, 0, 0); 
+    backface-visibility: hidden; /* Stops text flickering during animations */
+    perspective: 1000px;
+}
+
+/* 4. Smart Rendering for Grids (YouTube Thumbnails) */
+img {
+    /* ⚡ The holy grail of performance: Tells the browser to skip rendering images that are off-screen */
+    content-visibility: auto; 
+    display: block;
+}
+
+/* 5. Pre-allocate GPU Memory for Modals */
+.action-sheet-overlay, .fast-overlay, .fast-modal-bg {
+    /* Warns the browser "Hey, this is going to fade in, prepare the GPU" */
+    will-change: opacity, transform; 
+}
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+</style>
 </head>
 <body>
 
@@ -26,7 +80,7 @@
     📓 SyncSpace
     <div id="sidebarUnreadBadge" class="sidebar-badge"></div>
 </button>
-<button data-tip="Watch Something together" class="nav-item active" onclick="loadView('cinema')">Cinema</button>
+<button data-tip="Watch Something together" class="nav-item active" onclick="loadView('cinema')"> 🎞️ Cinema</button>
 
                     <button class="nav-item" onclick="loadView('tracker')">⏳ Logistics</button>
                     <button data-tip="Have unlimited chats" class="nav-item" onclick="loadView('messages')"> 💬 Messages <span id="messagesNavBadge" style="display:none; background:#ff2a5f; color:white; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:auto; font-weight:bold;">0</span></button>
