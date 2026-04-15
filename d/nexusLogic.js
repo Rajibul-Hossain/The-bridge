@@ -1,19 +1,9 @@
-// ==========================================
-// 1. FIREBASE IMPORTS
-// ==========================================
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, query, where, onSnapshot, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// 🔴 PASTE YOUR EXACT FIREBASE CONFIG HERE 🔴
 const firebaseConfig = {
-  apiKey: "AIzaSyDEbvPzoahjdt0w5s2SF7Usn3ZnOxF2v38",
-  authDomain: "ever-us.firebaseapp.com",
-  projectId: "ever-us",
-  storageBucket: "ever-us.firebasestorage.app",
-  messagingSenderId: "925623567345",
-  appId: "1:925623567345:web:10c9d1e5873a4df7983a50",
-  measurementId: "G-6E4K45TWLV"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -23,9 +13,6 @@ const db = getFirestore(app);
 let currentUser = null;
 let currentUsername = "";
 
-// ==========================================
-// 2. AUTHENTICATION LISTENER (Who is looking at the screen?)
-// ==========================================
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
@@ -50,10 +37,6 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = 'index.html';
     }
 });
-
-// ==========================================
-// 3. FETCH THE GLOBAL DIRECTORY
-// ==========================================
 async function fetchAllUsers() {
     const directoryBox = document.getElementById('usersDirectory');
     directoryBox.innerHTML = ""; // Clear loading text
@@ -96,9 +79,6 @@ async function fetchAllUsers() {
     }
 }
 
-// ==========================================
-// 4. REAL-TIME LISTENER FOR INCOMING REQUESTS
-// ==========================================
 function listenForRequests() {
     const signalsBox = document.getElementById('incomingRequests');
     
@@ -133,10 +113,6 @@ function listenForRequests() {
         });
     });
 }
-
-// ==========================================
-// 5. THE ACTIVE FUNCTIONS (Attached to Window for HTML onclicks)
-// ==========================================
 
 window.sendBridgeRequest = async function(targetUid, targetUsername) {
     try {
