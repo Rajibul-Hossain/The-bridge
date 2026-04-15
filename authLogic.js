@@ -53,14 +53,7 @@ window.loadRegister = function() {
         authBox.style.animation = null; }}
 window.loadLogin();let authentication, database;
 try {
-  const firebaseConfig = {
-  apiKey: "AIzaSyDEbvPzoahjdt0w5s2SF7Usn3ZnOxF2v38",
-  authDomain: "ever-us.firebaseapp.com",
-  projectId: "ever-us",
-  storageBucket: "ever-us.firebasestorage.app",
-  messagingSenderId: "925623567345",
-  appId: "1:925623567345:web:10c9d1e5873a4df7983a50",
-  measurementId: "G-6E4K45TWLV"};
+  const firebaseConfig = {};
     const app = initializeApp(firebaseConfig);
     authentication = getAuth(app);
     database = getFirestore(app);
