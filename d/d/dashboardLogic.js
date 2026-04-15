@@ -4,14 +4,7 @@ import { initInteractionListener } from './interxn.js';
 import { getFirestore, doc, getDoc, updateDoc, onSnapshot as firestoreSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getDatabase, ref, onValue, set, get, push, onDisconnect, serverTimestamp as rtdbTime, update, remove, onChildAdded} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
-const firebaseConfig = {
-    apiKey: "AIzaSyDEbvPzoahjdt0w5s2SF7Usn3ZnOxF2v38",
-    authDomain: "ever-us.firebaseapp.com",
-    databaseURL: "https://ever-us-default-rtdb.firebaseio.com", 
-    projectId: "ever-us", storageBucket: "ever-us.firebasestorage.app",
-    messagingSenderId: "925623567345",
-    appId: "1:925623567345:web:10c9d1e5873a4df7983a50",
-    measurementId: "G-6E4K45TWLV"};
+const firebaseConfig = {};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);const db = getFirestore(app);
 const rtdb = getDatabase(app); 
