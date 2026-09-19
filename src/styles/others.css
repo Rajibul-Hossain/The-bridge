@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap");
 /* --- 16. TOP RIGHT ANCHOR --- */
 
 .note-system-anchor{
@@ -1052,7 +1053,6 @@
 }
 
 /* ⚡ CINEMATIC BLUR REVEAL & CURSIVE TYPOGRAPHY */
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
 
 .pulse-message {
     display: flex;
